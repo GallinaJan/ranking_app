@@ -1,12 +1,16 @@
 import sys
-from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QDialog, QDialogButtonBox, QMessageBox,
-    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem,
-    QStackedLayout, QPushButton, QTabWidget, QLabel, QToolBar, QStatusBar, QCheckBox, QPushButton)
-from PyQt6.QtGui import QPalette, QColor, QIcon, QAction, QFont
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, \
+    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton
+from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt
 import pandas as pd
 from topsis import compute_topsis
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
+import matplotlib.pyplot as plt
+import matplotlib
+
+matplotlib.use('TkAgg')
 
 
 ### Okno Główne ###
@@ -16,7 +20,19 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
 
+        ### Właściwości bazy danych ###
+
         self.file_name = None
+        self.method = "TOPSIS"
+        self.n = 0
+        self.N = []
+        self.p_ideal = []
+        self.p_anti_ideal = []
+        self.c1 = ""
+        self.c2 = ""
+        self.items_names = []
+
+        ### Ustawienia okna ###
 
         self.resize(800, 600)  # rozmiar
         self.setWindowTitle('Aplikacja rankingowa')  # nazwa okna
@@ -27,7 +43,7 @@ class MainWindow(QMainWindow):
 
         tabs.addTab(Config(self), 'Konfiguracja')  # dodanie zakładki Konfiguracja
         tabs.addTab(Sheet(self), 'Arkusz kalkulacyjny')  # dodanie zakładki Arkusz
-        tabs.addTab(Chart(), 'Wykres')  # dodanie zakładek Wykres
+        tabs.addTab(Chart(self), 'Wykres')  # dodanie zakładek Wykres
 
         self.setCentralWidget(tabs)  # umieszczenie zakładek w oknie
 
@@ -41,7 +57,7 @@ class Config(QWidget):
         super(Config, self).__init__()
 
         self.parent = parent  # wskaźnik na rodzica
-        self.method = "TOPSIS"  # nazwa metody
+        self.parent.method = "TOPSIS"  # nazwa metody
 
         layout = QVBoxLayout()  # układ główny
         layout_config = QVBoxLayout()  # rozmieszczenie konfiguracji
@@ -127,18 +143,20 @@ class Config(QWidget):
         self.label_file_name.setText("Wybrany plik: " + self.parent.file_name)  # aktualizacja etykiety
 
     def choose_method(self, method):
-        self.method = method  # nazwa metody
+        self.parent.method = method  # nazwa metody
 
     def compute(self):
         if self.parent.file_name is not None:
-            if self.method == "TOPSIS":
-                rank = compute_topsis(self.parent.file_name)
-            elif self.method == "RMS":
+            if self.parent.method == "TOPSIS":
+                rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
+                    self.parent.c1, self.parent.c2, self.parent.items_names = compute_topsis(self.parent.file_name)
+            elif self.parent.method == "RMS":
                 pass
-            elif self.method == "SP-CS":
+            elif self.parent.method == "SP-CS":
                 pass
             else:
-                rank = compute_topsis(self.parent.file_name)
+                rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
+                    self.parent.c1, self.parent.c2, self.parent.items_names = compute_topsis(self.parent.file_name)
             self.results.setText(rank)
         else:
             QMessageBox.warning(self, "Brak danych", "Najpierw załaduj dane w oknie Konfiguracja",
@@ -166,7 +184,7 @@ class Sheet(QWidget):
         if self.parent.file_name is not None:  # gdy jest ścieżka
             df = pd.read_excel(self.parent.file_name)  # załadowanie danych
 
-            df.fillna('', inplace=True)  # zastąpienie NaN pustym str
+            df.fillna(" ", inplace=True)  # zastąpienie NaN pustym str
             self.table.setRowCount(df.shape[0])
             self.table.setColumnCount(df.shape[1])
             self.table.setHorizontalHeaderLabels(df.columns)
@@ -185,13 +203,46 @@ class Sheet(QWidget):
 
 class Chart(QWidget):
 
-    def __init__(self):
+    def __init__(self, parent):
         super(Chart, self).__init__()
-        self.setAutoFillBackground(True)
 
-        palette = self.palette()
-        palette.setColor(QPalette.ColorRole.Window, QColor('yellow'))
-        self.setPalette(palette)
+        self.parent = parent  # wskaźnik na rodzica
+
+        self.figure = plt.figure()  # wykres
+        self.canvas = FigureCanvasQTAgg(self.figure)
+        self.toolbar = NavigationToolbar2QT(self.canvas, self)
+
+        self.button = QPushButton("Narysuj wykres")  # przycisk na rysowanie wykresu
+        self.button.clicked.connect(self.plot_graph)
+
+        layout = QVBoxLayout()  # układ
+        layout.addWidget(self.toolbar)
+        layout.addWidget(self.canvas)
+        layout.addWidget(self.button)
+        self.setLayout(layout)
+
+    def plot_graph(self):
+        if self.parent.file_name is not None and self.parent.n != 0:
+            if self.parent.method == "TOPSIS" and self.parent.n == 2:
+                self.figure.clear()
+                ax = self.figure.add_subplot()
+                ax.clear()
+                for i in range(len(self.parent.items_names)):
+                    ax.scatter(self.parent.N[0][i], self.parent.N[1][i], label=self.parent.items_names[i])
+                ax.scatter(self.parent.p_ideal[0], self.parent.p_ideal[1], marker="s", label="Punkt idealny")
+                ax.scatter(self.parent.p_anti_ideal[0], self.parent.p_anti_ideal[1], marker="s",
+                           label="Punkt antyidealny")
+                ax.set(xlabel=self.parent.c1, ylabel=self.parent.c2,
+                       title="Parametry sprzętów na tle punktów idealnych metody TOPSIS")
+                ax.legend()
+                self.canvas.draw()
+            else:
+                QMessageBox.warning(self, "Nieprawidłowe dane",
+                                    "Można narysować wykres tylko dla dwóch kryteriów metody TOPSIS",
+                                    buttons=QMessageBox.StandardButton.Ok)  # ostrzeżenie
+        else:
+            QMessageBox.warning(self, "Brak danych", "Najpierw załaduj i wylicz dane w oknie Konfiguracja",
+                                buttons=QMessageBox.StandardButton.Ok)  # ostrzeżenie
 
 
 if __name__ == '__main__':
@@ -200,4 +251,8 @@ if __name__ == '__main__':
     window = MainWindow()
     window.show()
 
-    app.exec()
+    try:
+        app.exec()
+    except Exception:
+        QMessageBox.critical(window, "Krytyczny błąd", "Aplikacja napotkała straszny błąd",
+                             buttons=QMessageBox.StandardButton.Abort)

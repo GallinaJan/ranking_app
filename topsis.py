@@ -1,4 +1,4 @@
-from typing import List, Union, Optional, Tuple
+from typing import List, Union, Optional, Tuple, Any
 from math import sqrt
 import pandas as pd
 
@@ -18,13 +18,15 @@ def euclid_norm(D: List[List], j: int) -> float:
     return sqrt(s)
 
 
-def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] = None) -> List[float]:
+def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] = None) \
+        -> Tuple[List[float], int, List[List[float]], List[float], List[float]]:
     """
     Metoda topsis tworząca ranking produktów
     :param D: (List[List[Number]]) : macierz decyzjna D[m x N]
     :param W: (List[Number]) : wektor wag
     :param W_max: (List[bool]) : wektor logiczny określający, które maksymalizujemy kryterium (domyślnie każde)
-    :return: (List[float]) : wektor współczynników skoringowych
+    :return: (Tuple[List[float], int, List[List[float]], List[float], List[float]]) : wektor współczynników skoringowych
+    liczba kryetriów, macierz znormalizowana, punkty idealne, punkty antyidealne
     """
     m = len(D[0])  # liczba elementów
     n = len(D)  # liczba kryteriow
@@ -66,26 +68,40 @@ def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] =
         d_minus[i] = sqrt(s_minus)
         c[i] = d_minus[i] / (d_minus[i] + d_star[i])
 
-    return c
+    return c, n, N, p_ideal, p_anti_ideal
 
 
-def compute_topsis(file_name: str) -> str:
+def compute_topsis(file_name: str) -> Tuple[str, int, List[List[float]], List[float], List[float], str, str, List[str]]:
+    """
+    Funkcja wyliczająca z pliku ranking metodą topsis
+    :param file_name: (str) : nazwa pliku
+    :return: (Tuple[str, int, List[List[float]], List[float], List[float]], str, str, List[str]) : wektor współczynników
+    skoringowych jako str, liczba kryetriów, macierz znormalizowana, punkty idealne, punkty antyidealne, nazwa kryterium
+    1, nazwa kryterium 2, lista nazw sprzętów
+    """
     df = pd.read_excel(file_name)  # wczytanie excel z bazą słuchawek
     W = df['Wagi'].dropna().tolist()  # wektor wag
     W_max = df['Maksymalizacja'].dropna().tolist()  # wektor logiczny określający, które maksymalizujemy kryterium
     D = []  # macierz decyzyjna
+    c_names = []  # wektor nazw kryteriów
     for j in df.columns:
         if j == 'Lp.' or j == 'Nazwa':
             continue
         if j == 'Wagi':
             break
         D.append(df[j].tolist())
+        c_names.append(j)
 
-    c = topsis(D, W, W_max)  # tworzenie rankingu
+    c1 = c_names[0]
+    c2 = c_names[1]
+
+    c, n, N, p_ideal, p_anti_ideal = topsis(D, W, W_max)  # tworzenie rankingu
 
     rank = []
+    items_names = []
     for i in range(len(D[0])):
         rank.append((df['Nazwa'][i], c[i]))
+        items_names.append(df['Nazwa'][i])
 
     rank.sort(key=lambda tup: tup[1], reverse=True)  # posortowanie rankingu
 
@@ -93,4 +109,4 @@ def compute_topsis(file_name: str) -> str:
     for name, score in rank:
         rank_str += name + ' : ' + '{0:1.3f}'.format(score) + '\n'  # zapis rankingu jako str
 
-    return rank_str
+    return rank_str, n, N, p_ideal, p_anti_ideal, c1, c2, items_names
