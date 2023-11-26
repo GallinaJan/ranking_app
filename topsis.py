@@ -1,4 +1,4 @@
-from typing import List, Union, Optional, Tuple, Any
+from typing import List, Union, Optional, Tuple
 from math import sqrt
 import pandas as pd
 
@@ -71,13 +71,13 @@ def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] =
     return c, n, N, p_ideal, p_anti_ideal
 
 
-def compute_topsis(file_name: str) -> Tuple[str, int, List[List[float]], List[float], List[float], str, str, List[str]]:
+def compute_topsis(file_name: str) -> Tuple[str, int, List[List[float]], List[float], List[float], List[str], List[str]]:
     """
     Funkcja wyliczająca z pliku ranking metodą topsis
     :param file_name: (str) : nazwa pliku
     :return: (Tuple[str, int, List[List[float]], List[float], List[float]], str, str, List[str]) : wektor współczynników
-    skoringowych jako str, liczba kryetriów, macierz znormalizowana, punkty idealne, punkty antyidealne, nazwa kryterium
-    1, nazwa kryterium 2, lista nazw sprzętów
+    skoringowych jako str, liczba kryetriów, macierz znormalizowana, punkty idealne, punkty antyidealne,
+    lista nazw kryetriów, lista nazw sprzętów
     """
     df = pd.read_excel(file_name)  # wczytanie excel z bazą słuchawek
     W = df['Wagi'].dropna().tolist()  # wektor wag
@@ -91,9 +91,6 @@ def compute_topsis(file_name: str) -> Tuple[str, int, List[List[float]], List[fl
             break
         D.append(df[j].tolist())
         c_names.append(j)
-
-    c1 = c_names[0]
-    c2 = c_names[1]
 
     c, n, N, p_ideal, p_anti_ideal = topsis(D, W, W_max)  # tworzenie rankingu
 
@@ -109,4 +106,4 @@ def compute_topsis(file_name: str) -> Tuple[str, int, List[List[float]], List[fl
     for name, score in rank:
         rank_str += name + ' : ' + '{0:1.3f}'.format(score) + '\n'  # zapis rankingu jako str
 
-    return rank_str, n, N, p_ideal, p_anti_ideal, c1, c2, items_names
+    return rank_str, n, N, p_ideal, p_anti_ideal, c_names, items_names

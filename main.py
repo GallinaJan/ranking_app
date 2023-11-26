@@ -1,8 +1,9 @@
 import sys
+from typing import List, Self
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, \
-    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton
+    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox
 from PyQt6.QtGui import QFont
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSlot
 import pandas as pd
 from topsis import compute_topsis
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
@@ -17,7 +18,10 @@ matplotlib.use('TkAgg')
 
 class MainWindow(QMainWindow):
 
-    def __init__(self):
+    def __init__(self) -> Self:
+        """
+        Okno główne, wyświetlające aplikacje
+        """
         super(MainWindow, self).__init__()
 
         ### Właściwości bazy danych ###
@@ -28,8 +32,7 @@ class MainWindow(QMainWindow):
         self.N = []
         self.p_ideal = []
         self.p_anti_ideal = []
-        self.c1 = ""
-        self.c2 = ""
+        self.criteria = []
         self.items_names = []
 
         ### Ustawienia okna ###
@@ -53,7 +56,11 @@ class MainWindow(QMainWindow):
 
 class Config(QWidget):
 
-    def __init__(self, parent):
+    def __init__(self, parent: QMainWindow) -> Self:
+        """
+        Zakładka z konfiguracją danych do obliczeń
+        :param parent: (QMainWindow) : okno rodzic
+        """
         super(Config, self).__init__()
 
         self.parent = parent  # wskaźnik na rodzica
@@ -138,25 +145,41 @@ class Config(QWidget):
 
     ### Akcje ###
 
-    def choose_file(self):
+    @pyqtSlot()
+    def choose_file(self) -> None:
+        """
+        Wybranie pliku z danymi
+        :return: None
+        """
         self.parent.file_name = QFileDialog.getOpenFileName(self, filter="*.xlsx")[0]  # nazwa pliku
         self.label_file_name.setText("Wybrany plik: " + self.parent.file_name)  # aktualizacja etykiety
 
-    def choose_method(self, method):
+    @pyqtSlot()
+    def choose_method(self, method: str) -> None:
+        """
+        Wybranie metody
+        :param method: (str) : metoda z ComboBox
+        :return: None
+        """
         self.parent.method = method  # nazwa metody
 
-    def compute(self):
+    @pyqtSlot()
+    def compute(self) -> None:
+        """
+        Wyliczenie rankingu
+        :return: None
+        """
         if self.parent.file_name is not None:
             if self.parent.method == "TOPSIS":
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
-                    self.parent.c1, self.parent.c2, self.parent.items_names = compute_topsis(self.parent.file_name)
+                    self.parent.criteria, self.parent.items_names = compute_topsis(self.parent.file_name)
             elif self.parent.method == "RMS":
                 pass
             elif self.parent.method == "SP-CS":
                 pass
             else:
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
-                    self.parent.c1, self.parent.c2, self.parent.items_names = compute_topsis(self.parent.file_name)
+                    self.parent.criteria, self.parent.items_names = compute_topsis(self.parent.file_name)
             self.results.setText(rank)
         else:
             QMessageBox.warning(self, "Brak danych", "Najpierw załaduj dane w oknie Konfiguracja",
@@ -165,7 +188,11 @@ class Config(QWidget):
 
 class Sheet(QWidget):
 
-    def __init__(self, parent):
+    def __init__(self, parent: QMainWindow) -> Self:
+        """
+        Zakładka z arkuszem danych
+        :param parent: (QMainWindow) : okno rodzic
+        """
         super(Sheet, self).__init__()
 
         self.parent = parent  # wskaźnik na rodzica
@@ -180,7 +207,12 @@ class Sheet(QWidget):
         self.button.clicked.connect(self.load_excel_data)  # przypisanie akcji
         layout.addWidget(self.button)
 
-    def load_excel_data(self):
+    @pyqtSlot()
+    def load_excel_data(self) -> None:
+        """
+        Załadowanie danych z arkusza Excel
+        :return: None
+        """
         if self.parent.file_name is not None:  # gdy jest ścieżka
             df = pd.read_excel(self.parent.file_name)  # załadowanie danych
 
@@ -203,7 +235,11 @@ class Sheet(QWidget):
 
 class Chart(QWidget):
 
-    def __init__(self, parent):
+    def __init__(self, parent: QMainWindow) -> Self:
+        """
+        Zakładka z wykresem
+        :param parent: (QMainWindow) : okno rodzic
+        """
         super(Chart, self).__init__()
 
         self.parent = parent  # wskaźnik na rodzica
@@ -221,9 +257,14 @@ class Chart(QWidget):
         layout.addWidget(self.button)
         self.setLayout(layout)
 
-    def plot_graph(self):
+    @pyqtSlot()
+    def plot_graph(self) -> None:
+        """
+        Rysowanie wykresu
+        :return: None
+        """
         if self.parent.file_name is not None and self.parent.n != 0:
-            if self.parent.method == "TOPSIS" and self.parent.n == 2:
+            if self.parent.method == "TOPSIS" and self.parent.n == 2:  # rysowanie wykresu 2 zmiennych
                 self.figure.clear()
                 ax = self.figure.add_subplot()
                 ax.clear()
@@ -232,17 +273,110 @@ class Chart(QWidget):
                 ax.scatter(self.parent.p_ideal[0], self.parent.p_ideal[1], marker="s", label="Punkt idealny")
                 ax.scatter(self.parent.p_anti_ideal[0], self.parent.p_anti_ideal[1], marker="s",
                            label="Punkt antyidealny")
-                ax.set(xlabel=self.parent.c1, ylabel=self.parent.c2,
+                ax.set(xlabel=self.parent.criteria[0], ylabel=self.parent.criteria[1],
                        title="Parametry sprzętów na tle punktów idealnych metody TOPSIS")
                 ax.legend()
                 self.canvas.draw()
             else:
-                QMessageBox.warning(self, "Nieprawidłowe dane",
-                                    "Można narysować wykres tylko dla dwóch kryteriów metody TOPSIS",
-                                    buttons=QMessageBox.StandardButton.Ok)  # ostrzeżenie
+                criterion_choice = CriterionChoiceDialog(self, self.parent.criteria)  # wybór kryteriów do wyrysowania
+                criterion_choice.exec()
+                for idx, name in enumerate(self.parent.criteria):
+                    if criterion_choice.criterion1 == name:
+                        idx1 = idx
+                    if criterion_choice.criterion2 == name:
+                        idx2 = idx
+                self.figure.clear()
+                ax = self.figure.add_subplot()
+                ax.clear()
+                for i in range(len(self.parent.items_names)):  # rysowanie wykresu dla wybranych kryteriów
+                    ax.scatter(self.parent.N[idx1][i], self.parent.N[idx2][i], label=self.parent.items_names[i])
+                ax.scatter(self.parent.p_ideal[idx1], self.parent.p_ideal[idx2], marker="s", label="Punkt idealny")
+                ax.scatter(self.parent.p_anti_ideal[idx1], self.parent.p_anti_ideal[idx2], marker="s",
+                           label="Punkt antyidealny")
+                ax.set(xlabel=criterion_choice.criterion1, ylabel=criterion_choice.criterion2,
+                       title="Parametry sprzętów na tle punktów idealnych metody TOPSIS")
+                ax.legend()
+                self.canvas.draw()
+
         else:
             QMessageBox.warning(self, "Brak danych", "Najpierw załaduj i wylicz dane w oknie Konfiguracja",
                                 buttons=QMessageBox.StandardButton.Ok)  # ostrzeżenie
+
+
+class CriterionChoiceDialog(QDialog):
+
+    def __init__(self, parent: QMainWindow, criteria: List[str]) -> Self:
+        """
+        Okno dialogowe, które pyta o kryteria do wyrysowania
+        :param parent: (QMainWindow) : okno rodzic
+        :param criteria: (List[str]) : lista kryteriów dostępnych do wyboru
+        """
+        super().__init__(parent)
+
+        self.setModal(False)
+        self.setFixedSize(300, 150)
+        self.setWindowTitle("Wybór kryteriów")
+
+        self.criteria = criteria
+        self.criterion1 = self.criteria[0]
+        self.criterion2 = self.criteria[0]
+
+        QBtn = QDialogButtonBox.StandardButton.Ok
+
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accept)
+
+        self.layout = QVBoxLayout()
+        label = QLabel("Wybierz dwa kryteria do narysowania wykresu")
+        self.layout.addWidget(label)
+
+        self.layout_choice1 = QHBoxLayout()
+        self.layout_choice2 = QHBoxLayout()
+
+        criterion1 = QLabel("Kryterium 1: ")
+        combo_criterion1 = QComboBox()  # lista wyboru metod
+        combo_criterion1.addItems(self.criteria)  # dostępne metody
+        combo_criterion1.currentTextChanged.connect(self.choose_criterion1)  # przypisanie akcji
+
+        self.layout_choice1.addWidget(criterion1)
+        self.layout_choice1.addWidget(combo_criterion1)
+
+        criterion2 = QLabel("Kryterium 2: ")
+        combo_criterion2 = QComboBox()  # lista wyboru metod
+        combo_criterion2.addItems(self.criteria)  # dostępne metody
+        combo_criterion2.currentTextChanged.connect(self.choose_criterion2)  # przypisanie akcji
+
+        self.layout_choice2.addWidget(criterion2)
+        self.layout_choice2.addWidget(combo_criterion2)
+
+        self.layout.addLayout(self.layout_choice1)
+        self.layout.addLayout(self.layout_choice2)
+
+        self.layout.addWidget(self.buttonBox)
+
+        self.setLayout(self.layout)
+
+        self.show()
+
+    ### Akcje ###
+
+    @pyqtSlot(str)
+    def choose_criterion1(self, criterion: str) -> None:
+        """
+        Ustawienie pierwszego kryteriów
+        :param criterion: (str) : kryterium pierwsze na wykresie
+        :return: None
+        """
+        self.criterion1 = criterion
+
+    @pyqtSlot(str)
+    def choose_criterion2(self, criterion: str) -> None:
+        """
+        Ustawienie drugiego kryteriów
+        :param criterion: (str) : kryterium drugie na wykresie
+        :return:
+        """
+        self.criterion2 = criterion
 
 
 if __name__ == '__main__':
