@@ -6,6 +6,7 @@ from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, pyqtSlot
 import pandas as pd
 from topsis import compute_topsis
+from sp_cs import compute_sp_cs
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 import matplotlib.pyplot as plt
@@ -27,6 +28,14 @@ class MainWindow(QMainWindow):
         ### Właściwości bazy danych ###
 
         self.file_name = None
+        self.data_0 = []
+        self.data_1 = []
+        self.dap1 = []
+        self.dap2 = []
+        self.dap3 = []
+        self.quo_point_mean = []
+        self.quo_point_median = []
+        self.quo_point_random = []
         self.method = "TOPSIS"
         self.n = 0
         self.N = []
@@ -154,7 +163,7 @@ class Config(QWidget):
         self.parent.file_name = QFileDialog.getOpenFileName(self, filter="*.xlsx")[0]  # nazwa pliku
         self.label_file_name.setText("Wybrany plik: " + self.parent.file_name)  # aktualizacja etykiety
 
-    @pyqtSlot()
+    @pyqtSlot(str)
     def choose_method(self, method: str) -> None:
         """
         Wybranie metody
@@ -176,7 +185,11 @@ class Config(QWidget):
             elif self.parent.method == "RMS":
                 pass
             elif self.parent.method == "SP-CS":
-                pass
+                rank, self.parent.n, self.parent.data_0, self.parent.data_1, self.parent.quo_point_mean, \
+                    self.parent.quo_point_median, self.parent.quo_point_random, self.parent.dap1, self.parent.dap2, \
+                    self.parent.dap3, self.parent.criteria, self.parent.items_names = compute_sp_cs(self.parent.file_name)
+                if self.parent.n != 2:
+                    rank = "UWAGA! Metoda bierze pod uwagę tylko 2 pierwsze kryteria.\n" + rank
             else:
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.criteria, self.parent.items_names = compute_topsis(self.parent.file_name)
@@ -277,7 +290,7 @@ class Chart(QWidget):
                        title="Parametry sprzętów na tle punktów idealnych metody TOPSIS")
                 ax.legend()
                 self.canvas.draw()
-            else:
+            elif self.parent.method == "TOPSIS" and self.parent.n != 2:
                 criterion_choice = CriterionChoiceDialog(self, self.parent.criteria)  # wybór kryteriów do wyrysowania
                 criterion_choice.exec()
                 for idx, name in enumerate(self.parent.criteria):
@@ -297,7 +310,30 @@ class Chart(QWidget):
                        title="Parametry sprzętów na tle punktów idealnych metody TOPSIS")
                 ax.legend()
                 self.canvas.draw()
+            elif self.parent.method == "SP-CS":
+                self.figure.clear()
+                ax = self.figure.add_subplot()
+                ax.clear()
+                ax.plot([self.parent.quo_point_mean[0], self.parent.dap1[0]],
+                        [self.parent.quo_point_mean[1], self.parent.dap1[1]])
+                ax.plot([self.parent.quo_point_median[0], self.parent.dap2[0]],
+                        [self.parent.quo_point_median[1], self.parent.dap2[1]])
+                ax.plot([self.parent.quo_point_random[0], self.parent.dap3[0]],
+                        [self.parent.quo_point_random[1], self.parent.dap3[1]])
+                ax.scatter(self.parent.quo_point_mean[0], self.parent.quo_point_mean[1], label="punkt quo średnia", marker="s")
+                ax.scatter(self.parent.quo_point_median[0], self.parent.quo_point_median[1], label="punkt quo mediana", marker="s")
+                ax.scatter(self.parent.quo_point_random[0], self.parent.quo_point_random[1], label="punkt quo losowy", marker="s")
+                ax.scatter(
+                    [self.parent.dap1[0], self.parent.dap2[0], self.parent.dap3[0]],
+                    [self.parent.dap1[1], self.parent.dap2[1], self.parent.dap3[1]],
+                    label="punkt aspiracji", marker="s")
 
+                for idx in range(len(self.parent.data_0)):
+                    ax.scatter(self.parent.data_0[idx], self.parent.data_1[idx], label=self.parent.items_names[idx])
+                ax.set(xlabel=self.parent.criteria[0], ylabel=self.parent.criteria[1],
+                       title="Krzywa szkieletowa dla metody SP-CS")
+                ax.legend()
+                self.canvas.draw()
         else:
             QMessageBox.warning(self, "Brak danych", "Najpierw załaduj i wylicz dane w oknie Konfiguracja",
                                 buttons=QMessageBox.StandardButton.Ok)  # ostrzeżenie
