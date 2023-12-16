@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt, pyqtSlot
 import pandas as pd
 from topsis import compute_topsis
 from sp_cs import compute_sp_cs
+from rsm import compute_rsm
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 import matplotlib.pyplot as plt
@@ -182,8 +183,10 @@ class Config(QWidget):
             if self.parent.method == "TOPSIS":
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.criteria, self.parent.items_names = compute_topsis(self.parent.file_name)
-            elif self.parent.method == "RMS":
-                pass
+            elif self.parent.method == "RSM":
+                rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
+                    self.parent.quo_point_median, self.parent.quo_point_mean, \
+                    self.parent.criteria, self.parent.items_names = compute_rsm(self.parent.file_name)
             elif self.parent.method == "SP-CS":
                 rank, self.parent.n, self.parent.data_0, self.parent.data_1, self.parent.quo_point_mean, \
                     self.parent.quo_point_median, self.parent.quo_point_random, self.parent.dap1, self.parent.dap2, \
@@ -333,6 +336,48 @@ class Chart(QWidget):
                 ax.set(xlabel=self.parent.criteria[0], ylabel=self.parent.criteria[1],
                        title="Krzywa szkieletowa dla metody SP-CS")
                 ax.legend()
+                self.canvas.draw()
+            elif self.parent.method == "RSM" and self.parent.n == 2:
+                self.figure.clear()
+                ax = self.figure.add_subplot()
+                ax.clear()
+                d = [0. for _ in range(2)]
+                for i in range(len(self.parent.N[0])):
+                    for j in range(2):
+                        d[j] = self.parent.N[j][i]
+                    ax.scatter(d[0], d[1], label=self.parent.items_names[i])
+                ax.scatter(self.parent.p_ideal[0], self.parent.p_ideal[1],
+                           marker="s", label="Punkt idealny")
+                ax.scatter(self.parent.p_anti_ideal[0], self.parent.p_anti_ideal[1],
+                           marker="s", label="Punkt antyidealny")
+                ax.scatter(self.parent.quo_point_mean[0], self.parent.quo_point_mean[1],
+                           label="punkt quo średnia", marker="s")
+                ax.scatter(self.parent.quo_point_median[0], self.parent.quo_point_median[1],
+                           label="punkt quo mediana", marker="s")
+                ax.set(xlabel=self.parent.criteria[0], ylabel=self.parent.criteria[1],
+                       title="Wykres elementów dla metody RSM")
+                ax.legend()
+                self.canvas.draw()
+            elif self.parent.method == "RSM" and self.parent.n == 3:
+                self.figure.clear()
+                ax = self.figure.add_subplot(111, projection='3d')
+                ax.clear()
+                d = [0. for _ in range(3)]
+                for i in range(len(self.parent.N[0])):
+                    for j in range(3):
+                        d[j] = self.parent.N[j][i]
+                    ax.scatter(d[0], d[1], d[2], label=self.parent.items_names[i])
+                ax.scatter(self.parent.p_ideal[0], self.parent.p_ideal[1], self.parent.p_ideal[2],
+                           marker="s", label="Punkt idealny")
+                ax.scatter(self.parent.p_anti_ideal[0], self.parent.p_anti_ideal[1], self.parent.p_anti_ideal[2],
+                           marker="s", label="Punkt antyidealny")
+                ax.scatter(self.parent.quo_point_mean[0], self.parent.quo_point_mean[1], self.parent.quo_point_mean[2],
+                           label="punkt quo średnia", marker="s")
+                ax.scatter(self.parent.quo_point_median[0], self.parent.quo_point_median[1],
+                           self.parent.quo_point_median[2], label="punkt quo mediana", marker="s")
+                ax.set(xlabel=self.parent.criteria[0], ylabel=self.parent.criteria[1], zlabel=self.parent.criteria[2],
+                       title="Wykres elementów dla metody RSM")
+                ax.legend(prop={'size': 5})
                 self.canvas.draw()
         else:
             QMessageBox.warning(self, "Brak danych", "Najpierw załaduj i wylicz dane w oknie Konfiguracja",
