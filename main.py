@@ -66,10 +66,10 @@ class MainWindow(QMainWindow):
 
 class Config(QWidget):
 
-    def __init__(self, parent: QMainWindow):
+    def __init__(self, parent: MainWindow):
         """
         Zakładka z konfiguracją danych do obliczeń
-        :param parent: (QMainWindow) : okno rodzic
+        :param parent: (MainWindow) : okno rodzic
         """
         super(Config, self).__init__()
 
@@ -204,10 +204,10 @@ class Config(QWidget):
 
 class Sheet(QWidget):
 
-    def __init__(self, parent: QMainWindow):
+    def __init__(self, parent: MainWindow):
         """
         Zakładka z arkuszem danych
-        :param parent: (QMainWindow) : okno rodzic
+        :param parent: (MainWindow) : okno rodzic
         """
         super(Sheet, self).__init__()
 
@@ -251,10 +251,10 @@ class Sheet(QWidget):
 
 class Chart(QWidget):
 
-    def __init__(self, parent: QMainWindow):
+    def __init__(self, parent: MainWindow):
         """
         Zakładka z wykresem
-        :param parent: (QMainWindow) : okno rodzic
+        :param parent: (MainWindow) : okno rodzic
         """
         super(Chart, self).__init__()
 
@@ -386,10 +386,10 @@ class Chart(QWidget):
 
 class CriterionChoiceDialog(QDialog):
 
-    def __init__(self, parent: QMainWindow, criteria: List[str]):
+    def __init__(self, parent: MainWindow, criteria: List[str]):
         """
         Okno dialogowe, które pyta o kryteria do wyrysowania
-        :param parent: (QMainWindow) : okno rodzic
+        :param parent: (MainWindow) : okno rodzic
         :param criteria: (List[str]) : lista kryteriów dostępnych do wyboru
         """
         super().__init__(parent)
