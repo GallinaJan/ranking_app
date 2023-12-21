@@ -1,5 +1,5 @@
 import sys
-from typing import List, Self
+from typing import List
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, \
     QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox
 from PyQt6.QtGui import QFont
@@ -20,7 +20,7 @@ matplotlib.use('TkAgg')
 
 class MainWindow(QMainWindow):
 
-    def __init__(self) -> Self:
+    def __init__(self):
         """
         Okno główne, wyświetlające aplikacje
         """
@@ -66,7 +66,7 @@ class MainWindow(QMainWindow):
 
 class Config(QWidget):
 
-    def __init__(self, parent: QMainWindow) -> Self:
+    def __init__(self, parent: QMainWindow):
         """
         Zakładka z konfiguracją danych do obliczeń
         :param parent: (QMainWindow) : okno rodzic
@@ -204,7 +204,7 @@ class Config(QWidget):
 
 class Sheet(QWidget):
 
-    def __init__(self, parent: QMainWindow) -> Self:
+    def __init__(self, parent: QMainWindow):
         """
         Zakładka z arkuszem danych
         :param parent: (QMainWindow) : okno rodzic
@@ -251,7 +251,7 @@ class Sheet(QWidget):
 
 class Chart(QWidget):
 
-    def __init__(self, parent: QMainWindow) -> Self:
+    def __init__(self, parent: QMainWindow):
         """
         Zakładka z wykresem
         :param parent: (QMainWindow) : okno rodzic
@@ -386,7 +386,7 @@ class Chart(QWidget):
 
 class CriterionChoiceDialog(QDialog):
 
-    def __init__(self, parent: QMainWindow, criteria: List[str]) -> Self:
+    def __init__(self, parent: QMainWindow, criteria: List[str]):
         """
         Okno dialogowe, które pyta o kryteria do wyrysowania
         :param parent: (QMainWindow) : okno rodzic
