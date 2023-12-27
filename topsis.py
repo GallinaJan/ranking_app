@@ -71,21 +71,23 @@ def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] =
     return c, n, N, p_ideal, p_anti_ideal
 
 
-def compute_topsis(file_name: str) -> Tuple[str, int, List[List[float]], List[float], List[float], List[str], List[str]]:
+def compute_topsis(file_name: str, crits: List[int]) -> Tuple[str, int, List[List[float]], List[float], List[float], List[str], List[str]]:
     """
     Funkcja wyliczająca z pliku ranking metodą topsis
     :param file_name: (str) : nazwa pliku
+    :param crits: List[int] : lista numerów kryteriów branych pod uwagę w metodzie
     :return: (Tuple[str, int, List[List[float]], List[float], List[float]], str, str, List[str]) : wektor współczynników
     skoringowych jako str, liczba kryetriów, macierz znormalizowana, punkty idealne, punkty antyidealne,
     lista nazw kryetriów, lista nazw sprzętów
     """
     df = pd.read_excel(file_name)  # wczytanie excel z bazą słuchawek
+    crits = sorted(crits)
     W = df['Wagi'].dropna().tolist()  # wektor wag
     W_max = df['Maksymalizacja'].dropna().tolist()  # wektor logiczny określający, które maksymalizujemy kryterium
     D = []  # macierz decyzyjna
     c_names = []  # wektor nazw kryteriów
     for j in df.columns:
-        if j == 'Lp.' or j == 'Nazwa':
+        if j == 'Lp.' or j == 'Nazwa' or df.columns.get_loc(j) - 1 not in crits:
             continue
         if j == 'Wagi':
             break

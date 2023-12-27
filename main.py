@@ -1,7 +1,8 @@
 import sys
 from typing import List
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, \
-    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox
+    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox,\
+    QCheckBox
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, pyqtSlot
 import pandas as pd
@@ -44,6 +45,7 @@ class MainWindow(QMainWindow):
         self.p_anti_ideal = []
         self.criteria = []
         self.items_names = []
+        self.crit_numbers = [] #lista zaznaczonych kryteriów (checkboxów)
 
         ### Ustawienia okna ###
 
@@ -80,6 +82,7 @@ class Config(QWidget):
         layout_config = QVBoxLayout()  # rozmieszczenie konfiguracji
         layout_choose_file = QHBoxLayout()  # rozmieszczenie układu z wyborem pliku
         layout_choose_method = QHBoxLayout()  # rozmieszczenie układu z wyborem metody
+        layout_choose_categories = QHBoxLayout() #rozmieszczenie wyboru kryteriów z listy
 
         layout.setContentsMargins(20, 20, 20, 20)  # wielkość ramki
         layout.setSpacing(40)  # odległości między widżetami
@@ -109,6 +112,18 @@ class Config(QWidget):
         self.label_file_name.setFont(font_file_name)  # ustawienie wielkości czcionki
         self.label_file_name.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)  # rozmieszczenie
         layout_config.addWidget(self.label_file_name)  # dodanie widżetu do układu
+
+        label_crits = QLabel("Wybór kryteriów:")  # etykieta
+        font_crits = label_crits.font()
+        font_crits.setPointSize(12)
+        label_crits.setFont(font_crits)  # ustawienie wielkości czcionki
+        layout_choose_categories.addWidget(label_crits)  # dodanie widżetu do układu
+
+        checkboxes = [QCheckBox(f'Kryterium {i + 1}') for i in range(7)]
+        for checkbox in checkboxes:
+            layout_choose_categories.addWidget(checkbox)
+            checkbox.clicked.connect(self.on_checkbox_clicked)
+        layout_config.addLayout(layout_choose_categories)
 
         label_method_name = QLabel("Wybrana metoda:")  # etykieta z nazwą wybranej metody
         font_method_name = label_method_name.font()
@@ -173,6 +188,19 @@ class Config(QWidget):
         """
         self.parent.method = method  # nazwa metody
 
+    def on_checkbox_clicked(self):
+        """
+        Wybór kryteriów - kiedy przycisk wciśnięty, numer kryterium (nie indeks!) dodaje się do listy
+        :return: None
+        """
+        sender_checkbox = self.sender()
+        checkbox_text = sender_checkbox.text()
+        checkbox_state = True if sender_checkbox.isChecked() else False
+        if checkbox_state:
+            self.parent.crit_numbers.append(int(checkbox_text[-1]))
+        else:
+            self.parent.crit_numbers.remove(int(checkbox_text[-1]))
+
     @pyqtSlot()
     def compute(self) -> None:
         """
@@ -182,15 +210,18 @@ class Config(QWidget):
         if self.parent.file_name is not None:
             if self.parent.method == "TOPSIS":
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
-                    self.parent.criteria, self.parent.items_names = compute_topsis(self.parent.file_name)
+                    self.parent.criteria, self.parent.items_names = \
+                    compute_topsis(self.parent.file_name, self.parent.crit_numbers)
             elif self.parent.method == "RSM":
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.quo_point_median, self.parent.quo_point_mean, \
-                    self.parent.criteria, self.parent.items_names = compute_rsm(self.parent.file_name)
+                    self.parent.criteria, self.parent.items_names = \
+                    compute_rsm(self.parent.file_name, self.parent.crit_numbers)
             elif self.parent.method == "SP-CS":
                 rank, self.parent.n, self.parent.data_0, self.parent.data_1, self.parent.quo_point_mean, \
                     self.parent.quo_point_median, self.parent.quo_point_random, self.parent.dap1, self.parent.dap2, \
-                    self.parent.dap3, self.parent.criteria, self.parent.items_names = compute_sp_cs(self.parent.file_name)
+                    self.parent.dap3, self.parent.criteria, self.parent.items_names = \
+                    compute_sp_cs(self.parent.file_name, self.parent.crit_numbers)
                 if self.parent.n != 2:
                     rank = "UWAGA! Metoda bierze pod uwagę tylko 2 pierwsze kryteria.\n" + rank
             else:
