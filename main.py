@@ -46,6 +46,8 @@ class MainWindow(QMainWindow):
         self.criteria = []
         self.items_names = []
         self.crit_numbers = [] #lista zaznaczonych kryteriów (checkboxów)
+        self.crits_in_orig_file = 0
+        self.checkboxes = []
 
         ### Ustawienia okna ###
 
@@ -82,7 +84,7 @@ class Config(QWidget):
         layout_config = QVBoxLayout()  # rozmieszczenie konfiguracji
         layout_choose_file = QHBoxLayout()  # rozmieszczenie układu z wyborem pliku
         layout_choose_method = QHBoxLayout()  # rozmieszczenie układu z wyborem metody
-        layout_choose_categories = QHBoxLayout() #rozmieszczenie wyboru kryteriów z listy
+        self.layout_choose_categories = QHBoxLayout() #rozmieszczenie wyboru kryteriów z listy
 
         layout.setContentsMargins(20, 20, 20, 20)  # wielkość ramki
         layout.setSpacing(40)  # odległości między widżetami
@@ -117,13 +119,9 @@ class Config(QWidget):
         font_crits = label_crits.font()
         font_crits.setPointSize(12)
         label_crits.setFont(font_crits)  # ustawienie wielkości czcionki
-        layout_choose_categories.addWidget(label_crits)  # dodanie widżetu do układu
+        self.layout_choose_categories.addWidget(label_crits)  # dodanie widżetu do układu
 
-        checkboxes = [QCheckBox(f'Kryterium {i + 1}') for i in range(7)]
-        for checkbox in checkboxes:
-            layout_choose_categories.addWidget(checkbox)
-            checkbox.clicked.connect(self.on_checkbox_clicked)
-        layout_config.addLayout(layout_choose_categories)
+        layout_config.addLayout(self.layout_choose_categories)
 
         label_method_name = QLabel("Wybrana metoda:")  # etykieta z nazwą wybranej metody
         font_method_name = label_method_name.font()
@@ -170,14 +168,43 @@ class Config(QWidget):
 
     ### Akcje ###
 
-    @pyqtSlot()
     def choose_file(self) -> None:
         """
         Wybranie pliku z danymi
         :return: None
         """
+        self.clear_layout()
         self.parent.file_name = QFileDialog.getOpenFileName(self, filter="*.xlsx")[0]  # nazwa pliku
         self.label_file_name.setText("Wybrany plik: " + self.parent.file_name)  # aktualizacja etykiety
+        self.parent.crits_in_orig_file = self.create_temporary_df()
+        self.parent.checkboxes = [QCheckBox(f'Kryterium {i + 1}') for i in range(self.parent.crits_in_orig_file)]
+        for checkbox in self.parent.checkboxes:
+            self.layout_choose_categories.addWidget(checkbox)
+            if self.parent.checkboxes.index(checkbox) in [0, 1]:
+                checkbox.setChecked(True)
+                self.parent.crit_numbers.append(self.parent.checkboxes.index(checkbox) + 1)
+            checkbox.clicked.connect(self.on_checkbox_clicked)
+
+    def create_temporary_df(self) -> int:
+        df = pd.read_excel(self.parent.file_name)  # wczytanie excel z bazą słuchawek
+        D = []  # macierz decyzyjna
+        c_names = []  # wektor nazw kryteriów
+        for j in df.columns:
+            if j == 'Lp.' or j == 'Nazwa':
+                continue
+            if j == 'Wagi':
+                break
+            D.append(df[j].tolist())
+            c_names.append(j)
+        return len(c_names)
+
+    def clear_layout(self) -> None:
+        while self.layout_choose_categories.count() != 1:
+            item = self.layout_choose_categories.itemAt(self.layout_choose_categories.count() - 1)
+            widget = item.widget()
+            if widget and isinstance(widget, QCheckBox):
+                widget.setParent(None)
+                widget.deleteLater()
 
     @pyqtSlot(str)
     def choose_method(self, method: str) -> None:

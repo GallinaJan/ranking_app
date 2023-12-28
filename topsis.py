@@ -28,6 +28,7 @@ def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] =
     :return: (Tuple[List[float], int, List[List[float]], List[float], List[float]]) : wektor współczynników skoringowych
     liczba kryetriów, macierz znormalizowana, punkty idealne, punkty antyidealne
     """
+    print(D)
     m = len(D[0])  # liczba elementów
     n = len(D)  # liczba kryteriow
     N = [[0.0 for _ in range(m)] for _ in range(n)]  # macierz znormalizowana
@@ -39,7 +40,7 @@ def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] =
 
     if W_max is not None:  # minimalizacja czy maksymalizacja kryterium
         for i in range(len(W_max)):
-            if not W_max[i]:
+            if not W_max[i] and i < n:
                 p_ideal[i] = float('inf')
                 p_anti_ideal[i] = 0
     else:
