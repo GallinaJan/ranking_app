@@ -118,6 +118,11 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]]) -> Tuple[List[floa
             score_sum[i] += score1[i] + score2[i]
 
     score = [el / 3 for el in score_sum]
+
+    for idx in range(m):
+        if idx not in not_dominated_idx:
+            score.insert(idx, -float('inf'))
+            
     return score, data_0, data_1, quo_point_mean, quo_point_median, quo_point_random, disrupted_aspiration_point1, \
            disrupted_aspiration_point2, disrupted_aspiration_point3
 
