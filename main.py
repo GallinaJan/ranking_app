@@ -208,7 +208,10 @@ class Config(QWidget):
         :return: None
         """
         if self.parent.file_name is not None:
-            if self.parent.method == "TOPSIS":
+            if len(self.parent.crit_numbers) < 2:
+                QMessageBox.warning(self, "Nieprawidłowe dane", "Wybierz co najmniej 2 kryteria",
+                                buttons=QMessageBox.StandardButton.Ok)
+            elif self.parent.method == "TOPSIS":
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.criteria, self.parent.items_names = \
                     compute_topsis(self.parent.file_name, self.parent.crit_numbers)
@@ -218,12 +221,14 @@ class Config(QWidget):
                     self.parent.criteria, self.parent.items_names = \
                     compute_rsm(self.parent.file_name, self.parent.crit_numbers)
             elif self.parent.method == "SP-CS":
-                rank, self.parent.n, self.parent.data_0, self.parent.data_1, self.parent.quo_point_mean, \
-                    self.parent.quo_point_median, self.parent.quo_point_random, self.parent.dap1, self.parent.dap2, \
-                    self.parent.dap3, self.parent.criteria, self.parent.items_names = \
-                    compute_sp_cs(self.parent.file_name, self.parent.crit_numbers)
-                if self.parent.n != 2:
-                    rank = "UWAGA! Metoda bierze pod uwagę tylko 2 pierwsze kryteria.\n" + rank
+                if len(self.parent.crit_numbers) == 2:
+                    rank, self.parent.n, self.parent.data_0, self.parent.data_1, self.parent.quo_point_mean, \
+                        self.parent.quo_point_median, self.parent.quo_point_random, self.parent.dap1, self.parent.dap2, \
+                        self.parent.dap3, self.parent.criteria, self.parent.items_names = \
+                        compute_sp_cs(self.parent.file_name, self.parent.crit_numbers)
+                else:
+                    QMessageBox.warning(self, "Nieprawidłowe dane", "Metoda SP-CS działa tylko dla 2 kryteriów",
+                                buttons=QMessageBox.StandardButton.Ok)
             else:
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.criteria, self.parent.items_names = compute_topsis(self.parent.file_name)
