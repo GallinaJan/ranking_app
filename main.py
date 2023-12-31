@@ -1,7 +1,7 @@
 import sys
 from typing import List
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, \
-    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox
+    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox, QFrame
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, pyqtSlot
 import pandas as pd
@@ -44,6 +44,8 @@ class MainWindow(QMainWindow):
         self.p_anti_ideal = []
         self.criteria = []
         self.items_names = []
+
+        self.chosen_metric = "Manualnie"
 
         ### Ustawienia okna ###
 
@@ -122,9 +124,29 @@ class Config(QWidget):
         font_combo_method.setPointSize(12)
         combo_method.setFont(font_combo_method)
         combo_method.currentTextChanged.connect(self.choose_method)  # przypisanie akcji
+
         layout_choose_method.addWidget(combo_method)  # dodanie widżetu do układu
 
+        # metryki (set visibility)
+        frame_metric = QFrame()
+        frame_metric.hide()
+        layout_metric = QVBoxLayout()
+        frame_metric.setLayout(layout_metric)
+
+        label_metric = QLabel("Wybierz metrykę: ")
+        layout_metric.addWidget(label_metric)
+
+        combo_metric = QComboBox()
+        combo_metric.addItems(["Manualnie", "Czebyszew", "Euklides"])
+        combo_metric.currentTextChanged.connect(self.choose_metric)
+        layout_metric.addWidget(combo_metric)
+
+        combo_method.currentTextChanged.connect(lambda state, combobox=combo_method, frame=frame_metric:
+                                                self.set_frame_visibility(combobox, frame))     # po zmianie na topsis ramka nie znika
+
         layout_config.addLayout(layout_choose_method)
+
+        layout_config.addWidget(frame_metric)
 
         button_compute = QPushButton(self)  # przycisk wyliczający ranking
         button_compute.setText("Wylicz ranking")  # nazwa przycisku
@@ -200,6 +222,17 @@ class Config(QWidget):
         else:
             QMessageBox.warning(self, "Brak danych", "Najpierw załaduj dane w oknie Konfiguracja",
                                 buttons=QMessageBox.StandardButton.Ok)
+
+    def set_frame_visibility(self, combobox, frame):
+
+        if combobox.currentText() != "TOPSIS":
+            frame.show()
+        else:
+            frame.hide()
+
+    def choose_metric(self, value_from_combobox):
+
+        self.choose_metric = value_from_combobox
 
 
 class Sheet(QWidget):
