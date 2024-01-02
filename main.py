@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
         self.criteria = []
         self.items_names = []
 
-        self.chosen_metric = "Manualnie"
+        self.chosen_metric = "Default"
 
         ### Ustawienia okna ###
 
@@ -137,7 +137,7 @@ class Config(QWidget):
         layout_metric.addWidget(label_metric)
 
         combo_metric = QComboBox()
-        combo_metric.addItems(["Manualnie", "Czebyszew", "Euklides"])
+        combo_metric.addItems(["Default", "Bray-Curtis", "Canberra", "Chebyshev", "City Block"])
         combo_metric.currentTextChanged.connect(self.choose_metric)
         layout_metric.addWidget(combo_metric)
 
@@ -208,11 +208,11 @@ class Config(QWidget):
             elif self.parent.method == "RSM":
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.quo_point_median, self.parent.quo_point_mean, \
-                    self.parent.criteria, self.parent.items_names = compute_rsm(self.parent.file_name)
+                    self.parent.criteria, self.parent.items_names = compute_rsm(self.parent.file_name, self.parent.chosen_metric)
             elif self.parent.method == "SP-CS":
                 rank, self.parent.n, self.parent.data_0, self.parent.data_1, self.parent.quo_point_mean, \
                     self.parent.quo_point_median, self.parent.quo_point_random, self.parent.dap1, self.parent.dap2, \
-                    self.parent.dap3, self.parent.criteria, self.parent.items_names = compute_sp_cs(self.parent.file_name)
+                    self.parent.dap3, self.parent.criteria, self.parent.items_names = compute_sp_cs(self.parent.file_name, self.parent.chosen_metric)
                 if self.parent.n != 2:
                     rank = "UWAGA! Metoda bierze pod uwagę tylko 2 pierwsze kryteria.\n" + rank
             else:
@@ -232,7 +232,7 @@ class Config(QWidget):
 
     def choose_metric(self, value_from_combobox):
 
-        self.choose_metric = value_from_combobox
+        self.parent.chosen_metric = value_from_combobox
 
 
 class Sheet(QWidget):
