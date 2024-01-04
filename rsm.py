@@ -168,6 +168,7 @@ def rsm(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tupl
     return score, aspiration_value, anti_ideal_point, quo_point_median, quo_point_mean
 
 
+
 def compute_rsm(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[List[Number]], List[Number], List[Number], List[Number],
                                          List[Number], List[str], List[str]]:
     """
