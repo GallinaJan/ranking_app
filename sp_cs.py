@@ -134,9 +134,10 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tu
     for idx in range(m):
         if idx not in not_dominated_idx:
             score.insert(idx, -float('inf'))
-            
+
     return score, data_0, data_1, quo_point_mean, quo_point_median, quo_point_random, disrupted_aspiration_point1, \
            disrupted_aspiration_point2, disrupted_aspiration_point3
+
 
 
 def compute_sp_cs(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float],
