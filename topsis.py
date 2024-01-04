@@ -83,7 +83,6 @@ def compute_topsis(file_name: str, criteria: List[int]) -> Tuple[str, int, List[
     lista nazw kryetriów, lista nazw sprzętów
     """
     df = pd.read_excel(file_name)  # wczytanie excel z bazą słuchawek
-    crits = sorted(crits)
     W = df['Wagi'].dropna().tolist()  # wektor wag
     W_max = df['Maksymalizacja'].dropna().tolist()  # wektor logiczny określający, które maksymalizujemy kryterium
     D = []  # macierz decyzyjna
