@@ -123,23 +123,6 @@ def rsm(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tupl
         d_quo_mean_n = [elem / max(d_quo_mean) for elem in d_quo_mean]
         d_quo_median_n = [elem / max(d_quo_median) for elem in d_quo_median]
 
-    elif metric == "Canberra":  # każda kolejna metryka tak samo tylko, że zmienia się funkcja scipy
-        d_aspiration = []
-        d_quo_mean = []
-        d_quo_median = []
-        data_as_array = np.asarray(data)
-        for i in range(len(data[0])):
-            aspiration_value_as_vector = np.asarray(aspiration_value)
-            quo_mean_as_vector = np.asarray(quo_point_mean)
-            quo_median_as_vector = np.asarray(quo_point_median)
-            d_aspiration.append(canberra(data_as_array[:, i], aspiration_value_as_vector))
-            d_quo_mean.append(canberra(data_as_array[:, i], quo_mean_as_vector))
-            d_quo_median.append(canberra(data_as_array[:, i], quo_median_as_vector))
-
-        d_aspiration_n = [elem / max(d_aspiration) for elem in d_aspiration]
-        d_quo_mean_n = [elem / max(d_quo_mean) for elem in d_quo_mean]
-        d_quo_median_n = [elem / max(d_quo_median) for elem in d_quo_median]
-
     elif metric == "Chebyshev":
         d_aspiration = []
         d_quo_mean = []
