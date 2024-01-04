@@ -139,7 +139,6 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tu
            disrupted_aspiration_point2, disrupted_aspiration_point3
 
 
-
 def compute_sp_cs(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float],
                                            List[float], List[float], List[float], List[str], List[str]]:
     """
