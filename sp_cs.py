@@ -139,11 +139,12 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tu
            disrupted_aspiration_point2, disrupted_aspiration_point3
 
 
-def compute_sp_cs(file_name: str, metric: str) -> Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float],
+def compute_sp_cs(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float],
                                            List[float], List[float], List[float], List[str], List[str]]:
     """
     Funkcja wyliczająca z pliku ranking metodą sp-cs
     :param file_name: (str) : nazwa pliku
+    :param criteria: (List[int]) : lista wybranych kryteriów
     :param metric: (str) : nazwa wykorzystywanej metryki
     :return: (Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float], List[float],
      List[float], List[float], List[str], List[str]]) : wektor współczynników skoringowych jako str, liczba kryetriów,
@@ -153,8 +154,9 @@ def compute_sp_cs(file_name: str, metric: str) -> Tuple[str, int, List[Number], 
     W_max = df['Maksymalizacja'].dropna().tolist()  # wektor logiczny określający, które maksymalizujemy kryterium
     D = []  # macierz decyzyjna
     c_names = []  # wektor nazw kryteriów
+    criteria = sorted(criteria)
     for j in df.columns:
-        if j == 'Lp.' or j == 'Nazwa':
+        if j == 'Lp.' or j == 'Nazwa' or df.columns.get_loc(j) - 1 not in criteria:
             continue
         if j == 'Wagi':
             break

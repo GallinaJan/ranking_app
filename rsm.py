@@ -185,11 +185,12 @@ def rsm(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tupl
     return score, aspiration_value, anti_ideal_point, quo_point_median, quo_point_mean
 
 
-def compute_rsm(file_name: str, metric: str) -> Tuple[str, int, List[List[Number]], List[Number], List[Number], List[Number],
+def compute_rsm(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[List[Number]], List[Number], List[Number], List[Number],
                                          List[Number], List[str], List[str]]:
     """
     Funkcja wyliczająca z pliku ranking metodą sp-cs
     :param file_name: (str) : nazwa pliku
+    :param criteria: (List[int]) : lista wybranych kryteriów
     :param metric: (str) : nazwa wykorzystywanej metryki (przekazywana z gui)
     :return: (Tuple[str, int, List[List[Number]], List[Number], List[Number], List[Number], List[Number], List[str],
     List[str]]) : wektor współczynników skoringowych jako str, liczba kryetriów, punkty elementów, punkt aspiracji,
@@ -199,8 +200,9 @@ def compute_rsm(file_name: str, metric: str) -> Tuple[str, int, List[List[Number
     W_max = df['Maksymalizacja'].dropna().tolist()  # wektor logiczny określający, które maksymalizujemy kryterium
     D = []  # macierz decyzyjna
     c_names = []  # wektor nazw kryteriów
+    criteria = sorted(criteria)
     for j in df.columns:
-        if j == 'Lp.' or j == 'Nazwa':
+        if j == 'Lp.' or j == 'Nazwa' or df.columns.get_loc(j) - 1 not in criteria:
             continue
         if j == 'Wagi':
             break

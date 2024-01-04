@@ -1,7 +1,7 @@
 import sys
 from typing import List
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, \
-    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox, QFrame
+    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox, QFrame, QCheckBox
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, pyqtSlot
 import pandas as pd
@@ -45,6 +45,7 @@ class MainWindow(QMainWindow):
         self.criteria = []
         self.items_names = []
 
+        self.chosen_criteria = []
         self.chosen_metric = "Default"
 
         ### Ustawienia okna ###
@@ -204,15 +205,15 @@ class Config(QWidget):
         if self.parent.file_name is not None:
             if self.parent.method == "TOPSIS":
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
-                    self.parent.criteria, self.parent.items_names = compute_topsis(self.parent.file_name)
+                    self.parent.criteria, self.parent.items_names = compute_topsis(self.parent.file_name, self.parent.chosen_criteria)
             elif self.parent.method == "RSM":
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.quo_point_median, self.parent.quo_point_mean, \
-                    self.parent.criteria, self.parent.items_names = compute_rsm(self.parent.file_name, self.parent.chosen_metric)
+                    self.parent.criteria, self.parent.items_names = compute_rsm(self.parent.file_name, self.parent.chosen_criteria, self.parent.chosen_metric)
             elif self.parent.method == "SP-CS":
                 rank, self.parent.n, self.parent.data_0, self.parent.data_1, self.parent.quo_point_mean, \
                     self.parent.quo_point_median, self.parent.quo_point_random, self.parent.dap1, self.parent.dap2, \
-                    self.parent.dap3, self.parent.criteria, self.parent.items_names = compute_sp_cs(self.parent.file_name, self.parent.chosen_metric)
+                    self.parent.dap3, self.parent.criteria, self.parent.items_names = compute_sp_cs(self.parent.file_name, self.parent.chosen_criteria, self.parent.chosen_metric)
                 if self.parent.n != 2:
                     rank = "UWAGA! Metoda bierze pod uwagę tylko 2 pierwsze kryteria.\n" + rank
             else:
