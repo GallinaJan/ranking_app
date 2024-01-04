@@ -2,17 +2,19 @@ from typing import List, Tuple, Optional, Union
 import random
 import pandas as pd
 from math import sqrt
+from scipy.spatial.distance import braycurtis, chebyshev, canberra, cityblock
 
 Number = Union[float, int]
 
 
-def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]]) -> Tuple[List[float], List[Number], List[Number],
+def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tuple[List[float], List[Number], List[Number],
                                                                        List[float], List[Number], List[float],
                                                                        List[float], List[float], List[float]]:
     """
     Funkcja wyliczająca ranking metodą SP-CS
     :param D: (List[List[Number) : macierz elementów
     :param W_max: (List[bool]) : wektor maksymalizacji kryteriów
+    :param metric: (str) : nazwa wykorzystywanej metryki do obliczania odległości
     :return: (Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float], List[float],
      List[float], List[float], List[str], List[str]]) : wektor współczynników skoringowych,
      punkty elementów x, punkty elementów y, punkty quo, punkty aspiracji
@@ -89,33 +91,43 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]]) -> Tuple[List[floa
         data_1.append(D[1][idx])
 
     score_sum = [0. for _ in range(len(data_0))]
-    for quo_point, aspiration_point in [(quo_point_mean, disrupted_aspiration_point1),
-                                        (quo_point_median, disrupted_aspiration_point2),
-                                        (quo_point_random, disrupted_aspiration_point3)]:
-        a = (quo_point[1] - aspiration_point[1]) / (quo_point[0] - aspiration_point[0])
-        b = quo_point[1] - a * quo_point[0]
-        d = sqrt((quo_point[0] - aspiration_point[0]) ** 2 + (quo_point[1] - aspiration_point[1]) ** 2)
-        score1 = []  # odległość znormalizowana rzutu między punktem quo a aspiracji
-        score2 = []  # odległość nieznormalizowana od prostej między quo a aspiracji
-        for point_idx in range(len(data_0)):
-            a_p = -1 / a
-            b_p = data_1[point_idx] - a_p * data_0[point_idx]
-            x = (b_p - b) / (a - a_p)
-            y = a * x + b
-            d1 = sqrt((quo_point[0] - x) ** 2 + (quo_point[1] - y) ** 2)
-            d2 = sqrt((x - aspiration_point[0]) ** 2 + (y - aspiration_point[1]) ** 2)
-            if 0.99 * d < d1 + d2 < 1.01 * d:
-                score1.append(d1 / d)
-            elif d1 > d2:
-                score1.append(1 + d2 / d)
-            elif d2 > d1:
-                score1.append(-d1 / d)
-            h = sqrt((x - data_0[point_idx]) ** 2 + (y - data_1[point_idx]) ** 2)
-            score2.append(h)
-        score2 = [-el / max(score2) for el in score2]  # normalizacja score2
+    if metric == "Default":
+        for quo_point, aspiration_point in [(quo_point_mean, disrupted_aspiration_point1),
+                                            (quo_point_median, disrupted_aspiration_point2),
+                                            (quo_point_random, disrupted_aspiration_point3)]:
+            a = (quo_point[1] - aspiration_point[1]) / (quo_point[0] - aspiration_point[0])
+            b = quo_point[1] - a * quo_point[0]
+            d = sqrt((quo_point[0] - aspiration_point[0]) ** 2 + (quo_point[1] - aspiration_point[1]) ** 2)
+            score1 = []  # odległość znormalizowana rzutu między punktem quo a aspiracji
+            score2 = []  # odległość nieznormalizowana od prostej między quo a aspiracji
+            for point_idx in range(len(data_0)):
+                a_p = -1 / a
+                b_p = data_1[point_idx] - a_p * data_0[point_idx]
+                x = (b_p - b) / (a - a_p)
+                y = a * x + b
+                d1 = sqrt((quo_point[0] - x) ** 2 + (quo_point[1] - y) ** 2)
+                d2 = sqrt((x - aspiration_point[0]) ** 2 + (y - aspiration_point[1]) ** 2)
+                if 0.99 * d < d1 + d2 < 1.01 * d:
+                    score1.append(d1 / d)
+                elif d1 > d2:
+                    score1.append(1 + d2 / d)
+                elif d2 > d1:
+                    score1.append(-d1 / d)
+                h = sqrt((x - data_0[point_idx]) ** 2 + (y - data_1[point_idx]) ** 2)
+                score2.append(h)
+            score2 = [-el / max(score2) for el in score2]  # normalizacja score2
 
-        for i in range(len(score_sum)):
-            score_sum[i] += score1[i] + score2[i]
+            for i in range(len(score_sum)):
+                score_sum[i] += score1[i] + score2[i]
+
+    elif metric == "Bray-Curtis":
+        pass
+    elif metric == "Canberra":
+        pass
+    elif metric == "Chebyshev":
+        pass
+    elif metric == "City Block":
+        pass
 
     score = [el / 3 for el in score_sum]
 
@@ -127,12 +139,14 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]]) -> Tuple[List[floa
            disrupted_aspiration_point2, disrupted_aspiration_point3
 
 
-def compute_sp_cs(file_name: str, crits: List[int]) -> Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float],
+
+def compute_sp_cs(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float],
                                            List[float], List[float], List[float], List[str], List[str]]:
     """
     Funkcja wyliczająca z pliku ranking metodą sp-cs
     :param file_name: (str) : nazwa pliku
-    :param crits: List[int] : lista numerów kryteriów uwzględnianych w metodzie
+    :param criteria: (List[int]) : lista wybranych kryteriów
+    :param metric: (str) : nazwa wykorzystywanej metryki
     :return: (Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float], List[float],
      List[float], List[float], List[str], List[str]]) : wektor współczynników skoringowych jako str, liczba kryetriów,
      punkty elementów x, punkty elementów y, punkty quo, punkty aspiracji, lista nazw kryteriów i lista nazw elementów
@@ -141,9 +155,9 @@ def compute_sp_cs(file_name: str, crits: List[int]) -> Tuple[str, int, List[Numb
     W_max = df['Maksymalizacja'].dropna().tolist()  # wektor logiczny określający, które maksymalizujemy kryterium
     D = []  # macierz decyzyjna
     c_names = []  # wektor nazw kryteriów
-    crits = sorted(crits)
+    criteria = sorted(criteria)
     for j in df.columns:
-        if j == 'Lp.' or j == 'Nazwa' or df.columns.get_loc(j) - 1 not in crits:
+        if j == 'Lp.' or j == 'Nazwa' or df.columns.get_loc(j) - 1 not in criteria:
             continue
         if j == 'Wagi':
             break
@@ -156,7 +170,7 @@ def compute_sp_cs(file_name: str, crits: List[int]) -> Tuple[str, int, List[Numb
         items_names.append(df['Nazwa'][i])
 
     score, data_0, data_1, quo_point_mean, quo_point_median, quo_point_random, disrupted_aspiration_point1, \
-    disrupted_aspiration_point2, disrupted_aspiration_point3 = sp_cs(D, W_max)  # tworzenie rankingu
+    disrupted_aspiration_point2, disrupted_aspiration_point3 = sp_cs(D, W_max, metric)  # tworzenie rankingu
 
     rank = []
     for i in range(len(D[0])):

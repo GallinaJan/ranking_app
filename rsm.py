@@ -1,16 +1,20 @@
 from typing import List, Tuple, Optional, Union
+
+import numpy as np
 import pandas as pd
 from math import sqrt
+from scipy.spatial.distance import braycurtis, chebyshev, canberra, cityblock
 
 Number = Union[float, int]
 
 
-def rsm(D: List[List[Number]], W_max: Optional[List[bool]]) -> Tuple[List[float], List[Number], List[Number],
+def rsm(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tuple[List[float], List[Number], List[Number],
                                                                     List[Number], List[Number]]:
     """
     Funkcja wyliczająca ranking metodą SP-CS
     :param D: (List[List[Number) : macierz elementów
     :param W_max: (List[bool]) : wektor maksymalizacji kryteriów
+    :param metric: (str) : nazwa wykorzystywanej metryki
     :return: (Tuple[str, int, List[Number], List[Number], List[Number], List[Number]) : wektor współczynników
     skoringowych, punkt aspiracji, punkt antyidealny, punkt quo mediana, punkt quo średnia
     """
@@ -80,26 +84,96 @@ def rsm(D: List[List[Number]], W_max: Optional[List[bool]]) -> Tuple[List[float]
             criterion.append(D[i][idx])
         data.append(criterion)
 
-    d_square_aspiration = [0. for _ in range(len(data[0]))]  # wyznaczenie odległości punktów od punktu aspiracji
-    for i in range(n):
-        for j in range(len(data[0])):
-            d_square_aspiration[j] += (data[i][j] - aspiration_value[i]) ** 2
-    d_aspiration = [sqrt(elem) for elem in d_square_aspiration]
-    d_aspiration_n = [elem / max(d_aspiration) for elem in d_aspiration]
+    if metric == "Default":
+        d_square_aspiration = [0. for _ in range(len(data[0]))]  # wyznaczenie odległości punktów od punktu aspiracji
+        for i in range(n):
+            for j in range(len(data[0])):
+                d_square_aspiration[j] += (data[i][j] - aspiration_value[i]) ** 2
+        d_aspiration = [sqrt(elem) for elem in d_square_aspiration]
+        d_aspiration_n = [elem / max(d_aspiration) for elem in d_aspiration]
 
-    d_square_quo_mean = [0. for _ in range(len(data[0]))]  # wyznaczenie odległości punktów od punktu quo średniej
-    for i in range(n):
-        for j in range(len(data[0])):
-            d_square_quo_mean[j] += (data[i][j] - quo_point_mean[i]) ** 2
-    d_quo_mean = [sqrt(elem) for elem in d_square_quo_mean]
-    d_quo_mean_n = [elem / max(d_quo_mean) for elem in d_quo_mean]
+        d_square_quo_mean = [0. for _ in range(len(data[0]))]  # wyznaczenie odległości punktów od punktu quo średniej
+        for i in range(n):
+            for j in range(len(data[0])):
+                d_square_quo_mean[j] += (data[i][j] - quo_point_mean[i]) ** 2
+        d_quo_mean = [sqrt(elem) for elem in d_square_quo_mean]
+        d_quo_mean_n = [elem / max(d_quo_mean) for elem in d_quo_mean]
 
-    d_square_quo_median = [0. for _ in range(len(data[0]))]  # wyznaczenie odległości punktów od punktu quo mediana
-    for i in range(n):
-        for j in range(len(data[0])):
-            d_square_quo_median[j] += (data[i][j] - quo_point_median[i]) ** 2
-    d_quo_median = [sqrt(elem) for elem in d_square_quo_median]
-    d_quo_median_n = [elem / max(d_quo_median) for elem in d_quo_median]
+        d_square_quo_median = [0. for _ in range(len(data[0]))]  # wyznaczenie odległości punktów od punktu quo mediana
+        for i in range(n):
+            for j in range(len(data[0])):
+                d_square_quo_median[j] += (data[i][j] - quo_point_median[i]) ** 2
+        d_quo_median = [sqrt(elem) for elem in d_square_quo_median]
+        d_quo_median_n = [elem / max(d_quo_median) for elem in d_quo_median]
+
+    elif metric == "Bray-Curtis":
+        d_aspiration = []
+        d_quo_mean = []
+        d_quo_median = []
+        data_as_array = np.asarray(data)
+        for i in range(len(data[0])):
+            aspiration_value_as_vector = np.asarray(aspiration_value)
+            quo_mean_as_vector = np.asarray(quo_point_mean)
+            quo_median_as_vector = np.asarray(quo_point_median)
+            d_aspiration.append(braycurtis(data_as_array[:, i], aspiration_value_as_vector))
+            d_quo_mean.append(braycurtis(data_as_array[:, i], quo_mean_as_vector))
+            d_quo_median.append(braycurtis(data_as_array[:, i], quo_median_as_vector))
+
+        d_aspiration_n = [elem / max(d_aspiration) for elem in d_aspiration]    # normalizacja
+        d_quo_mean_n = [elem / max(d_quo_mean) for elem in d_quo_mean]
+        d_quo_median_n = [elem / max(d_quo_median) for elem in d_quo_median]
+
+    elif metric == "Canberra":  # każda kolejna metryka tak samo tylko, że zmienia się funkcja scipy
+        d_aspiration = []
+        d_quo_mean = []
+        d_quo_median = []
+        data_as_array = np.asarray(data)
+        for i in range(len(data[0])):
+            aspiration_value_as_vector = np.asarray(aspiration_value)
+            quo_mean_as_vector = np.asarray(quo_point_mean)
+            quo_median_as_vector = np.asarray(quo_point_median)
+            d_aspiration.append(canberra(data_as_array[:, i], aspiration_value_as_vector))
+            d_quo_mean.append(canberra(data_as_array[:, i], quo_mean_as_vector))
+            d_quo_median.append(canberra(data_as_array[:, i], quo_median_as_vector))
+
+        d_aspiration_n = [elem / max(d_aspiration) for elem in d_aspiration]
+        d_quo_mean_n = [elem / max(d_quo_mean) for elem in d_quo_mean]
+        d_quo_median_n = [elem / max(d_quo_median) for elem in d_quo_median]
+
+    elif metric == "Chebyshev":
+        d_aspiration = []
+        d_quo_mean = []
+        d_quo_median = []
+        data_as_array = np.asarray(data)
+        for i in range(len(data[0])):
+            aspiration_value_as_vector = np.asarray(aspiration_value)
+            quo_mean_as_vector = np.asarray(quo_point_mean)
+            quo_median_as_vector = np.asarray(quo_point_median)
+            d_aspiration.append(chebyshev(data_as_array[:, i], aspiration_value_as_vector))
+            d_quo_mean.append(chebyshev(data_as_array[:, i], quo_mean_as_vector))
+            d_quo_median.append(chebyshev(data_as_array[:, i], quo_median_as_vector))
+
+        d_aspiration_n = [elem / max(d_aspiration) for elem in d_aspiration]
+        d_quo_mean_n = [elem / max(d_quo_mean) for elem in d_quo_mean]
+        d_quo_median_n = [elem / max(d_quo_median) for elem in d_quo_median]
+
+    elif metric == "City Block":
+
+        d_aspiration = []
+        d_quo_mean = []
+        d_quo_median = []
+        data_as_array = np.asarray(data)
+        for i in range(len(data[0])):
+            aspiration_value_as_vector = np.asarray(aspiration_value)
+            quo_mean_as_vector = np.asarray(quo_point_mean)
+            quo_median_as_vector = np.asarray(quo_point_median)
+            d_aspiration.append(cityblock(data_as_array[:, i], aspiration_value_as_vector))
+            d_quo_mean.append(cityblock(data_as_array[:, i], quo_mean_as_vector))
+            d_quo_median.append(cityblock(data_as_array[:, i], quo_median_as_vector))
+
+        d_aspiration_n = [elem / max(d_aspiration) for elem in d_aspiration]
+        d_quo_mean_n = [elem / max(d_quo_mean) for elem in d_quo_mean]
+        d_quo_median_n = [elem / max(d_quo_median) for elem in d_quo_median]
 
     score = []  # wyznaczenie współczynnika scoringowego jako różnica odległości
     for j in range(len(data[0])):
@@ -111,12 +185,14 @@ def rsm(D: List[List[Number]], W_max: Optional[List[bool]]) -> Tuple[List[float]
     return score, aspiration_value, anti_ideal_point, quo_point_median, quo_point_mean
 
 
-def compute_rsm(file_name: str, crits: List[int]) -> Tuple[str, int, List[List[Number]], List[Number], List[Number], List[Number],
+
+def compute_rsm(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[List[Number]], List[Number], List[Number], List[Number],
                                          List[Number], List[str], List[str]]:
     """
     Funkcja wyliczająca z pliku ranking metodą sp-cs
     :param file_name: (str) : nazwa pliku
-    :param crits: List[int] : lista numerów kryteriów uwzględnianych w metodzie
+    :param criteria: (List[int]) : lista wybranych kryteriów
+    :param metric: (str) : nazwa wykorzystywanej metryki (przekazywana z gui)
     :return: (Tuple[str, int, List[List[Number]], List[Number], List[Number], List[Number], List[Number], List[str],
     List[str]]) : wektor współczynników skoringowych jako str, liczba kryetriów, punkty elementów, punkt aspiracji,
      punkt quo mediana, punkt quo średnia, lista nazw kryteriów i lista nazw elementów
@@ -125,9 +201,9 @@ def compute_rsm(file_name: str, crits: List[int]) -> Tuple[str, int, List[List[N
     W_max = df['Maksymalizacja'].dropna().tolist()  # wektor logiczny określający, które maksymalizujemy kryterium
     D = []  # macierz decyzyjna
     c_names = []  # wektor nazw kryteriów
-    crits = sorted(crits)
+    criteria = sorted(criteria)
     for j in df.columns:
-        if j == 'Lp.' or j == 'Nazwa' or df.columns.get_loc(j) - 1 not in crits:
+        if j == 'Lp.' or j == 'Nazwa' or df.columns.get_loc(j) - 1 not in criteria:
             continue
         if j == 'Wagi':
             break
@@ -139,7 +215,7 @@ def compute_rsm(file_name: str, crits: List[int]) -> Tuple[str, int, List[List[N
     for i in range(len(D[0])):
         items_names.append(df['Nazwa'][i])
 
-    score, aspiration_value, anti_ideal_point, quo_point_median, quo_point_mean = rsm(D, W_max)  # tworzenie rankingu
+    score, aspiration_value, anti_ideal_point, quo_point_median, quo_point_mean = rsm(D, W_max, metric)  # tworzenie rankingu
 
     rank = []
     for i in range(len(D[0])):
