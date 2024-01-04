@@ -268,13 +268,13 @@ class Config(QWidget):
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.quo_point_median, self.parent.quo_point_mean, \
                     self.parent.criteria, self.parent.items_names = \
-                    compute_rsm(self.parent.file_name, self.parent.crit_numbers)
+                    compute_rsm(self.parent.file_name, self.parent.crit_numbers, self.parent.chosen_metric)
             elif self.parent.method == "SP-CS":
                 if len(self.parent.crit_numbers) == 2:
                     rank, self.parent.n, self.parent.data_0, self.parent.data_1, self.parent.quo_point_mean, \
                         self.parent.quo_point_median, self.parent.quo_point_random, self.parent.dap1, self.parent.dap2, \
                         self.parent.dap3, self.parent.criteria, self.parent.items_names = \
-                        compute_sp_cs(self.parent.file_name, self.parent.crit_numbers)
+                        compute_sp_cs(self.parent.file_name, self.parent.crit_numbers, self.parent.chosen_metric)
                 else:
                     QMessageBox.warning(self, "Nieprawidłowe dane", "Metoda SP-CS działa tylko dla 2 kryteriów",
                                 buttons=QMessageBox.StandardButton.Ok)
