@@ -83,7 +83,7 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tu
     disrupted_aspiration_point1 = [coord * (0.9 + random.random() * 0.2) for coord in aspiration_value]
     disrupted_aspiration_point2 = [coord * (0.85 + random.random() * 0.3) for coord in aspiration_value]
     disrupted_aspiration_point3 = [coord * (0.8 + random.random() * 0.4) for coord in aspiration_value]
-
+    """
     data_0 = []
     data_1 = []
     for idx in not_dominated_idx:
@@ -137,7 +137,58 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tu
 
     return score, data_0, data_1, quo_point_mean, quo_point_median, quo_point_random, disrupted_aspiration_point1, \
            disrupted_aspiration_point2, disrupted_aspiration_point3
+    """
+    data_0 = []
+    data_1 = []
+    for idx in not_dominated_idx:
+        data_0.append(D[0][idx])
+        data_1.append(D[1][idx])
 
+    score_sum = [0. for _ in range(len(data_0))]
+    for quo_point, aspiration_point in [(quo_point_mean, disrupted_aspiration_point1),
+                                            (quo_point_median, disrupted_aspiration_point2),
+                                            (quo_point_random, disrupted_aspiration_point3)]:
+        a = (quo_point[1] - aspiration_point[1]) / (quo_point[0] - aspiration_point[0])
+        b = quo_point[1] - a * quo_point[0]
+        d = sqrt((quo_point[0] - aspiration_point[0]) ** 2 + (quo_point[1] - aspiration_point[1]) ** 2)
+        score1 = []  # odległość znormalizowana rzutu między punktem quo a aspiracji
+        score2 = []  # odległość nieznormalizowana od prostej między quo a aspiracji
+        for point_idx in range(len(data_0)):
+            a_p = -1 / a
+            b_p = data_1[point_idx] - a_p * data_0[point_idx]
+            x = (b_p - b) / (a - a_p)
+            y = a * x + b
+            d1 = sqrt((quo_point[0] - x) ** 2 + (quo_point[1] - y) ** 2)
+            d2 = sqrt((x - aspiration_point[0]) ** 2 + (y - aspiration_point[1]) ** 2)
+            if 0.99 * d < d1 + d2 < 1.01 * d:
+                score1.append(d1 / d)
+            elif d1 > d2:
+                score1.append(1 + d2 / d)
+            elif d2 > d1:
+                score1.append(-d1 / d)
+            if metric == "Default":
+                h = sqrt((x - data_0[point_idx]) ** 2 + (y - data_1[point_idx]) ** 2)
+                score2.append(h)
+            elif metric == "Bray-Curtis":
+                pass
+            elif metric == "Canberra":
+                pass
+            elif metric == "Chebyshev":
+                pass
+            elif metric == "City Block":
+                pass
+        score2 = [-el / max(score2) for el in score2]  # normalizacja score2
+        for i in range(len(score_sum)):
+            score_sum[i] += score1[i] + score2[i]
+
+    score = [el / 3 for el in score_sum]
+
+    for idx in range(m):
+        if idx not in not_dominated_idx:
+            score.insert(idx, -float('inf'))
+
+    return score, data_0, data_1, quo_point_mean, quo_point_median, quo_point_random, disrupted_aspiration_point1, \
+           disrupted_aspiration_point2, disrupted_aspiration_point3
 
 def compute_sp_cs(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[Number], List[Number], List[float], List[Number], List[float],
                                            List[float], List[float], List[float], List[str], List[str]]:
