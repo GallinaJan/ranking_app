@@ -2,7 +2,7 @@ import sys
 from typing import List
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, \
     QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox,\
-    QCheckBox, QDoubleSpinBox
+    QCheckBox, QDoubleSpinBox, QFrame
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, pyqtSlot
 import pandas as pd
@@ -87,7 +87,7 @@ class Config(QWidget):
         self.parent.method = "TOPSIS"  # nazwa metody
 
         layout = QVBoxLayout()  # układ główny
-        layout_config = QVBoxLayout()  # rozmieszczenie konfiguracji
+        self.layout_config = QVBoxLayout()  # rozmieszczenie konfiguracji
         layout_choose_file = QHBoxLayout()  # rozmieszczenie układu z wyborem pliku
         layout_choose_method = QHBoxLayout()  # rozmieszczenie układu z wyborem metody
         self.layout_choose_categories = QHBoxLayout() #rozmieszczenie wyboru kryteriów z listy
@@ -112,14 +112,14 @@ class Config(QWidget):
         button_choose_file.clicked.connect(self.choose_file)  # przypisanie akcji
         layout_choose_file.addWidget(button_choose_file)  # dodanie widżetu do układu
 
-        layout_config.addLayout(layout_choose_file)  # dodanie układu wyboru pliku do układu konfiguracji
+        self.layout_config.addLayout(layout_choose_file)  # dodanie układu wyboru pliku do układu konfiguracji
 
         self.label_file_name = QLabel("Wybrany plik: ")  # etykieta z nazwą wybranego pliku
         font_file_name = self.label_file_name.font()
         font_file_name.setPointSize(12)
         self.label_file_name.setFont(font_file_name)  # ustawienie wielkości czcionki
         self.label_file_name.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)  # rozmieszczenie
-        layout_config.addWidget(self.label_file_name)  # dodanie widżetu do układu
+        self.layout_config.addWidget(self.label_file_name)  # dodanie widżetu do układu
 
         label_crits = QLabel("Wybór kryteriów:")  # etykieta
         font_crits = label_crits.font()
@@ -127,7 +127,7 @@ class Config(QWidget):
         label_crits.setFont(font_crits)  # ustawienie wielkości czcionki
         self.layout_choose_categories.addWidget(label_crits)  # dodanie widżetu do układu
 
-        layout_config.addLayout(self.layout_choose_categories)
+        self.layout_config.addLayout(self.layout_choose_categories)
 
         label_method_name = QLabel("Wybrana metoda:")  # etykieta z nazwą wybranej metody
         font_method_name = label_method_name.font()
@@ -135,14 +135,14 @@ class Config(QWidget):
         label_method_name.setFont(font_method_name)  # ustawienie wielkości czcionki
         layout_choose_method.addWidget(label_method_name)  # dodanie widżetu do układu
 
-        combo_method = QComboBox()  # lista wyboru metod
-        combo_method.addItems(["TOPSIS", "RSM", "SP-CS"])  # dostępne metody
-        font_combo_method = combo_method.font()
+        self.combo_method = QComboBox()  # lista wyboru metod
+        self.combo_method.addItems(["TOPSIS", "RSM", "SP-CS"])  # dostępne metody
+        font_combo_method = self.combo_method.font()
         font_combo_method.setPointSize(12)
-        combo_method.setFont(font_combo_method)
-        combo_method.currentTextChanged.connect(self.choose_method)  # przypisanie akcji
+        self.combo_method.setFont(font_combo_method)
+        self.combo_method.currentTextChanged.connect(self.choose_method)  # przypisanie akcji
 
-        layout_choose_method.addWidget(combo_method)  # dodanie widżetu do układu
+        layout_choose_method.addWidget(self.combo_method)  # dodanie widżetu do układu
 
         # metryki (set visibility)
         #frame_metric = QFrame()
@@ -161,9 +161,27 @@ class Config(QWidget):
         #combo_method.currentTextChanged.connect(lambda state, combobox=combo_method, frame=frame_metric:
         #                                        self.set_frame_visibility(combobox, frame))     # po zmianie na topsis ramka nie znika
 
-        layout_config.addLayout(layout_choose_method)
+        self.layout_config.addLayout(layout_choose_method)
 
-        layout_config.addLayout(layout_metric)
+        # layout schowany do frame z wyborem wag (bo qdialog chyba nie może wysyłać danych do rodzica)
+        self.frame_weights = QFrame()
+        self.layout_weights = QVBoxLayout()
+        self.frame_weights.setLayout(self.layout_weights)
+
+        label_weights = QLabel("Wartości wag:")
+        self.layout_weights.addWidget(label_weights)
+        self.spinboxes = []
+
+        self.combo_method.currentTextChanged.connect(lambda state, combobox=self.combo_method, frame=self.frame_weights:
+                                        self.set_frame_visibility(combobox, frame))
+
+        for checkbox in self.parent.checkboxes:
+            if checkbox.stateChanged():
+                self.update_frame()
+
+        self.layout_config.addWidget(self.frame_weights)
+
+        self.layout_config.addLayout(layout_metric)
 
         button_compute = QPushButton(self)  # przycisk wyliczający ranking
         button_compute.setText("Wylicz ranking")  # nazwa przycisku
@@ -171,7 +189,7 @@ class Config(QWidget):
         font_compute.setPointSize(12)
         button_compute.setFont(font_compute)
         button_compute.clicked.connect(self.compute)  # przypisanie akcji
-        layout_config.addWidget(button_compute)
+        self.layout_config.addWidget(button_compute)
 
         label_results = QLabel("Wyniki metody:")  # etykieta z poleceniem
         font_results = label_results.font()
@@ -179,16 +197,16 @@ class Config(QWidget):
         font_results.setBold(True)
         label_results.setFont(font_results)  # ustawienie wielkości czcionki
         label_results.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom)  # rozmieszczenie
-        layout_config.addWidget(label_results)  # dodanie widżetu do układu
+        self.layout_config.addWidget(label_results)  # dodanie widżetu do układu
 
-        layout.addLayout(layout_config)  # dodanie układu konfiguracji do głównego układu
+        layout.addLayout(self.layout_config)  # dodanie układu konfiguracji do głównego układu
 
         ### Układ główny ###
 
         self.results = QLabel("")  # etykieta z poleceniem
         self.results.setFont(QFont('Calibri', 12))  # ustawienie wielkości czcionki
         self.results.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignHCenter)  # rozmieszczenie
-        layout_config.addWidget(self.results)  # dodanie widżetu do układu
+        self.layout_config.addWidget(self.results)  # dodanie widżetu do układu
 
         self.setLayout(layout)  # ustanowienie układu
 
@@ -210,6 +228,20 @@ class Config(QWidget):
                 checkbox.setChecked(True)
                 self.parent.crit_numbers.append(self.parent.checkboxes.index(checkbox) + 1)
             checkbox.clicked.connect(self.on_checkbox_clicked)
+            checkbox.clicked.connect(self.update_frame)
+
+        for _ in range(len(self.parent.crit_numbers)):  # stworzenie spinbxów dla kryteriów
+
+            new_label = QLabel("Waga dla kryterium {}".format(self.parent.crit_numbers[_]))
+            new_spinbox = QDoubleSpinBox()
+            new_spinbox.setRange(0, 1)
+            new_spinbox.setFixedSize(70, 20)
+            self.spinboxes.append(new_spinbox)
+
+            self.layout_weights.addWidget(new_label)
+            self.layout_weights.addWidget(new_spinbox)
+
+        self.set_frame_visibility(self.combo_method, self.frame_weights)
 
     def create_temporary_df(self) -> int:
         df = pd.read_excel(self.parent.file_name)  # wczytanie excel z bazą słuchawek
@@ -293,14 +325,47 @@ class Config(QWidget):
             QMessageBox.warning(self, "Brak danych", "Najpierw załaduj dane w oknie Konfiguracja",
                                 buttons=QMessageBox.StandardButton.Ok)
 
-    """
     def set_frame_visibility(self, combobox, frame):
-
-        if combobox.currentText() != "TOPSIS":
+        """
+        Czy ramka z wagami ma być widoczna
+        Parametry mogą być potem do usunięcia, bo te dane zostały przekształcone do selfów
+        :param combobox:
+        :param frame:
+        :return:
+        """
+        if combobox.currentText() == "TOPSIS" and self.parent.file_name is not None:
             frame.show()
         else:
             frame.hide()
-    """
+
+    def update_frame(self):
+        """
+        Aktualizacja ramki po zaznaczeniu/odznaczenia checkboxa
+        :return:
+        """
+        self.spinboxes = []
+        self.frame_weights.hide()
+        new_layout = QVBoxLayout()
+        new_frame = QFrame()
+        new_frame.setLayout(new_layout)
+        for _ in range(len(self.parent.crit_numbers)):  # stworzenie spinbxów dla kryteriów
+
+            new_label = QLabel("Waga dla kryterium {}".format(self.parent.crit_numbers[_]))
+            new_spinbox = QDoubleSpinBox()
+            new_spinbox.setRange(0, 1)
+            new_spinbox.setFixedSize(70, 20)
+            self.spinboxes.append(new_spinbox)
+
+            new_layout.addWidget(new_label)
+            new_layout.addWidget(new_spinbox)
+
+        self.layout_config.removeWidget(self.frame_weights)     # podmiana starego layout na nowy
+        self.layout_weights = new_layout
+        self.frame_weights = new_frame
+        self.frame_weights.show()
+        self.layout_config.addWidget(self.frame_weights)
+
+
     def choose_metric(self, value_from_combobox):
 
         self.parent.chosen_metric = value_from_combobox
