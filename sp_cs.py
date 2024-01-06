@@ -2,6 +2,7 @@ from typing import List, Tuple, Optional, Union
 import random
 import pandas as pd
 from math import sqrt
+import numpy as np
 from scipy.spatial.distance import braycurtis, chebyshev, canberra, cityblock
 
 Number = Union[float, int]
@@ -169,14 +170,21 @@ def sp_cs(D: List[List[Number]], W_max: Optional[List[bool]], metric: str) -> Tu
             if metric == "Default":
                 h = sqrt((x - data_0[point_idx]) ** 2 + (y - data_1[point_idx]) ** 2)
                 score2.append(h)
-            elif metric == "Bray-Curtis":
-                pass
-            elif metric == "Canberra":
-                pass
-            elif metric == "Chebyshev":
-                pass
-            elif metric == "City Block":
-                pass
+            else:
+                projection_point_as_vector = np.asarray([x,y])
+                data_point_as_vector = np.asarray([data_0[point_idx],data_1[point_idx]])
+                if metric == "Bray-Curtis":
+                    h = braycurtis(data_point_as_vector,projection_point_as_vector)
+                    score2.append(h)
+                elif metric == "Canberra":
+                    h = canberra(data_point_as_vector,projection_point_as_vector)
+                    score2.append(h)
+                elif metric == "Chebyshev":
+                    h = chebyshev(data_point_as_vector,projection_point_as_vector)
+                    score2.append(h)
+                elif metric == "City Block":
+                    h = cityblock(data_point_as_vector,projection_point_as_vector)
+                    score2.append(h)
         score2 = [-el / max(score2) for el in score2]  # normalizacja score2
         for i in range(len(score_sum)):
             score_sum[i] += score1[i] + score2[i]
