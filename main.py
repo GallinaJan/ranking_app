@@ -1,7 +1,8 @@
 import sys
 from typing import List
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, \
-    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox, QCheckBox, QFrame
+    QFileDialog, QComboBox, QTableWidget, QTableWidgetItem, QTabWidget, QLabel, QPushButton, QDialog, QDialogButtonBox,\
+    QCheckBox, QDoubleSpinBox
 from PyQt6.QtGui import QFont
 from PyQt6.QtCore import Qt, pyqtSlot
 import pandas as pd
@@ -50,6 +51,9 @@ class MainWindow(QMainWindow):
 
         self.chosen_criteria = []
         self.chosen_metric = "Default"
+
+        self.weights = []   # lista z wagami
+        self.data_from_dialog = []
 
         ### Ustawienia okna ###
 
@@ -261,6 +265,8 @@ class Config(QWidget):
                 QMessageBox.warning(self, "Nieprawidłowe dane", "Wybierz co najmniej 2 kryteria",
                                 buttons=QMessageBox.StandardButton.Ok)
             elif self.parent.method == "TOPSIS":
+                test_window = SetWeightsWindow(self.parent)
+                test_window.show()
                 rank, self.parent.n, self.parent.N, self.parent.p_ideal, self.parent.p_anti_ideal, \
                     self.parent.criteria, self.parent.items_names = \
                     compute_topsis(self.parent.file_name, self.parent.crit_numbers, self.parent.chosen_metric)
@@ -556,6 +562,57 @@ class CriterionChoiceDialog(QDialog):
         :return:
         """
         self.criterion2 = criterion
+
+
+class SetWeightsWindow(QWidget):
+    """
+    Okno do wyboru wartości wag dla metody Topsis
+    """
+
+    def __init__(self, parent: MainWindow):
+
+        super().__init__(parent)
+
+        self.setFixedSize(300, 150)
+        self.setWindowTitle("Wybór wartości wag")
+
+        self.layout = QVBoxLayout()
+        self.spinboxes = []
+        self.weights = []
+
+        for _ in range(len(parent.crit_numbers)):    # stworzenie przycisków
+
+            new_label = QLabel("Waga dla kryterium {}".format(parent.crit_numbers[_]))
+            new_spinbox = QDoubleSpinBox()
+            new_spinbox.setRange(0, 1)
+            new_spinbox.setFixedSize(70, 20)
+            self.spinboxes.append(new_spinbox)
+
+            self.layout.addWidget(new_label)
+            self.layout.addWidget(new_spinbox)
+
+        button = QPushButton("OK!")     # przycisk zatwierdzający
+        button.clicked.connect(self.set_weights)
+
+        self.layout.addWidget(button)
+        self.setLayout(self.layout)
+
+    def set_weights(self):
+        """
+        Wyznaczenie wag dla metody Topsis
+        :return:
+        """
+        print(type(self.parent))
+        values = [spinbox.value() for spinbox in self.spinboxes]
+
+        if sum(values) != 1:
+
+            QMessageBox.warning(self, "Błąd", "Suma wag musi wynosić 1!",
+                                buttons=QMessageBox.StandardButton.Ok)
+
+        else:
+
+            self.weights = values
 
 
 if __name__ == '__main__':

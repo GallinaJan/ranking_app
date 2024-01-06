@@ -73,11 +73,12 @@ def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] =
 
 
 
-def compute_topsis(file_name: str, criteria: List[int]) -> Tuple[str, int, List[List[float]], List[float], List[float], List[str], List[str]]:
+def compute_topsis(file_name: str, criteria: List[int], metric: str) -> Tuple[str, int, List[List[float]], List[float], List[float], List[str], List[str]]:
     """
     Funkcja wyliczająca z pliku ranking metodą topsis
     :param file_name: (str) : nazwa pliku
     :param criteria: (List[int]) : lista wybranych kryteriów
+    :param metric: str : metryki
     :return: (Tuple[str, int, List[List[float]], List[float], List[float]], str, str, List[str]) : wektor współczynników
     skoringowych jako str, liczba kryetriów, macierz znormalizowana, punkty idealne, punkty antyidealne,
     lista nazw kryetriów, lista nazw sprzętów
