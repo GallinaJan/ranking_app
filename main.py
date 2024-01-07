@@ -343,27 +343,29 @@ class Config(QWidget):
         Aktualizacja ramki po zaznaczeniu/odznaczenia checkboxa
         :return:
         """
-        self.spinboxes = []
-        self.frame_weights.hide()
-        new_layout = QVBoxLayout()
-        new_frame = QFrame()
-        new_frame.setLayout(new_layout)
-        for _ in range(len(self.parent.crit_numbers)):  # stworzenie spinbxów dla kryteriów
+        if self.combo_method.currentText() == "TOPSIS":
 
-            new_label = QLabel("Waga dla kryterium {}".format(self.parent.crit_numbers[_]))
-            new_spinbox = QDoubleSpinBox()
-            new_spinbox.setRange(0, 1)
-            new_spinbox.setFixedSize(70, 20)
-            self.spinboxes.append(new_spinbox)
+            self.spinboxes = []
+            self.frame_weights.hide()
+            new_layout = QVBoxLayout()
+            new_frame = QFrame()
+            new_frame.setLayout(new_layout)
+            for _ in range(len(self.parent.crit_numbers)):  # stworzenie spinbxów dla kryteriów
 
-            new_layout.addWidget(new_label)
-            new_layout.addWidget(new_spinbox)
+                new_label = QLabel("Waga dla kryterium {}".format(self.parent.crit_numbers[_]))
+                new_spinbox = QDoubleSpinBox()
+                new_spinbox.setRange(0, 1)
+                new_spinbox.setFixedSize(70, 20)
+                self.spinboxes.append(new_spinbox)
 
-        self.layout_config.removeWidget(self.frame_weights)     # podmiana starego layout na nowy
-        self.layout_weights = new_layout
-        self.frame_weights = new_frame
-        self.frame_weights.show()
-        self.layout_config.addWidget(self.frame_weights)
+                new_layout.addWidget(new_label)
+                new_layout.addWidget(new_spinbox)
+
+            self.layout_config.removeWidget(self.frame_weights)     # podmiana starego layout na nowy
+            self.layout_weights = new_layout
+            self.frame_weights = new_frame
+            self.frame_weights.show()
+            self.layout_config.addWidget(self.frame_weights)
 
 
     def choose_metric(self, value_from_combobox):
