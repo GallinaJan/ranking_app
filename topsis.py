@@ -1,6 +1,8 @@
 from typing import List, Union, Optional, Tuple
 from math import sqrt
 import pandas as pd
+import numpy as np
+from scipy.spatial.distance import braycurtis, chebyshev, canberra, cityblock
 
 Number = Union[float, int]
 
@@ -47,39 +49,66 @@ def topsis(D: List[List[Number]], W: List[Number], metric: str, W_max: Optional[
     else:
         W_max = [True for _ in range(n)]  # uzupełnienie parametru domyślnego
 
-    if metric == "Default":
 
-        for j in range(n):
-            en = euclid_norm(D, j)
-            for i in range(m):
-                N[j][i] = W[j] * D[j][i] / en  # normalizacja macierzy
-                if W_max[j] and p_ideal[j] < N[j][i]:  # znalezienie punktów idealnych
-                    p_ideal[j] = N[j][i]
-                if not W_max[j] and p_ideal[j] > N[j][i]:
-                    p_ideal[j] = N[j][i]
-                if W_max[j] and p_anti_ideal[j] > N[j][i]:
-                    p_anti_ideal[j] = N[j][i]
-                if not W_max[j] and p_anti_ideal[j] < N[j][i]:
-                    p_anti_ideal[j] = N[j][i]
+    for j in range(n):
+        en = euclid_norm(D, j)
+        for i in range(m):
+            N[j][i] = W[j] * D[j][i] / en  # normalizacja macierzy
+            if W_max[j] and p_ideal[j] < N[j][i]:  # znalezienie punktów idealnych
+                p_ideal[j] = N[j][i]
+            if not W_max[j] and p_ideal[j] > N[j][i]:
+                p_ideal[j] = N[j][i]
+            if W_max[j] and p_anti_ideal[j] > N[j][i]:
+                p_anti_ideal[j] = N[j][i]
+            if not W_max[j] and p_anti_ideal[j] < N[j][i]:
+                p_anti_ideal[j] = N[j][i]
+
+    if metric == "Default":
+        for i in range(m):  # obliczenie odległości
+            s_star = 0.0  # suma kwadratów róznicy punktu od punktu idealnego
+            s_minus = 0.0  # suma kwadratów róznicy punktu od punktu antyidealnego
+            for j in range(n):
+                s_star += (N[j][i] - p_ideal[j]) ** 2
+                s_minus += (N[j][i] - p_anti_ideal[j]) ** 2
+            d_star[i] = sqrt(s_star)
+            d_minus[i] = sqrt(s_minus)
+            c[i] = d_minus[i] / (d_minus[i] + d_star[i])
 
     elif metric == "Bray-Curtis":
-        pass
-    elif metric == "Canberra":
-        pass
-    elif metric == "Chebyshev":
-        pass
-    elif metric == "City Block":
-        pass
+        N_as_array = np.asarray(N)
+        p_ideal_as_vector = np.asarray(p_ideal)
+        p_anti_ideal_as_vector = np.asarray(p_anti_ideal)
+        for i in range(m):
+            d_star[i] = braycurtis(N_as_array[:, i], p_ideal_as_vector)
+            d_minus[i] = braycurtis(N_as_array[:, i], p_anti_ideal_as_vector)
+            c[i] = d_minus[i] / (d_minus[i] + d_star[i])
 
-    for i in range(m):  # obliczenie odległości
-        s_star = 0.0  # suma kwadratów róznicy punktu od punktu idealnego
-        s_minus = 0.0  # suma kwadratów róznicy punktu od punktu antyidealnego
-        for j in range(n):
-            s_star += (N[j][i] - p_ideal[j]) ** 2
-            s_minus += (N[j][i] - p_anti_ideal[j]) ** 2
-        d_star[i] = sqrt(s_star)
-        d_minus[i] = sqrt(s_minus)
-        c[i] = d_minus[i] / (d_minus[i] + d_star[i])
+    elif metric == "Canberra":
+        N_as_array = np.asarray(N)
+        p_ideal_as_vector = np.asarray(p_ideal)
+        p_anti_ideal_as_vector = np.asarray(p_anti_ideal)
+        for i in range(m):
+            d_star[i] = canberra(N_as_array[:, i], p_ideal_as_vector)
+            d_minus[i] = canberra(N_as_array[:, i], p_anti_ideal_as_vector)
+            c[i] = d_minus[i] / (d_minus[i] + d_star[i])
+
+    elif metric == "Chebyshev":
+        N_as_array = np.asarray(N)
+        p_ideal_as_vector = np.asarray(p_ideal)
+        p_anti_ideal_as_vector = np.asarray(p_anti_ideal)
+        for i in range(m):
+            d_star[i] = chebyshev(N_as_array[:, i], p_ideal_as_vector)
+            d_minus[i] = chebyshev(N_as_array[:, i], p_anti_ideal_as_vector)
+            c[i] = d_minus[i] / (d_minus[i] + d_star[i])
+
+    elif metric == "City Block":
+        N_as_array = np.asarray(N)
+        p_ideal_as_vector = np.asarray(p_ideal)
+        p_anti_ideal_as_vector = np.asarray(p_anti_ideal)
+        for i in range(m):
+            d_star[i] = cityblock(N_as_array[:, i], p_ideal_as_vector)
+            d_minus[i] = cityblock(N_as_array[:, i], p_anti_ideal_as_vector)
+            c[i] = d_minus[i] / (d_minus[i] + d_star[i])
 
     return c, n, N, p_ideal, p_anti_ideal
 

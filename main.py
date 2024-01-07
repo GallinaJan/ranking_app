@@ -586,16 +586,15 @@ class SetWeightsWindow(QDialog):
 
         super(SetWeightsWindow, self).__init__()
 
-        self.setFixedSize(300, 150)
         self.setWindowTitle("Wybór wartości wag")
 
         self.layout = QVBoxLayout()
-        self.spinboxes = []
-        self.weights = []
+        self.spinboxes = []     # lista spinboxów (zależy od liczby wybranych checkboxów)
+        self.weights = []       # lista wag przypisanych do wybranych kryteriów
 
-        for _ in range(len(parent.crit_numbers)):    # stworzenie przycisków
+        for _ in range(len(parent.crit_numbers)):    # stworzenie spinboxów
 
-            new_label = QLabel("Waga dla kryterium {}".format(parent.crit_numbers[_]))
+            new_label = QLabel("Waga dla kryterium {}".format(parent.crit_numbers[_]))  # nie mogę przekazać nazw kryteriów, bo one są chyba dostępne po wyliczeniu rankingu
             new_spinbox = QDoubleSpinBox()
             new_spinbox.setRange(0, 1)
             new_spinbox.setFixedSize(70, 20)
@@ -607,6 +606,7 @@ class SetWeightsWindow(QDialog):
         button = QPushButton("OK!")     # przycisk zatwierdzający
         button.clicked.connect(self.set_weights)
 
+        self.setFixedSize(300, 75 * len(self.spinboxes))  
         self.layout.addWidget(button)
         self.setLayout(self.layout)
 
@@ -615,16 +615,15 @@ class SetWeightsWindow(QDialog):
         Wyznaczenie wag dla metody Topsis
         :return:
         """
-        print(type(self.parent))
         values = [spinbox.value() for spinbox in self.spinboxes]
 
-        if sum(values) != 1:
+        if sum(values) != 1:    # jeśli wagi nie sumują się do 1, to należy je wpisać ponownie
 
             QMessageBox.warning(self, "Błąd", "Suma wag musi wynosić 1!",
                                 buttons=QMessageBox.StandardButton.Ok)
 
         else:
-
+            # w przeciwnym wypadku wybrane wartości są zapisywane a okno jest chowane
             self.weights = values
             self.hide()
 
