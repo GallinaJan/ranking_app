@@ -18,13 +18,14 @@ def euclid_norm(D: List[List], j: int) -> float:
     return sqrt(s)
 
 
-def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] = None) \
+def topsis(D: List[List[Number]], W: List[Number], metric: str, W_max: Optional[List[bool]] = None) \
         -> Tuple[List[float], int, List[List[float]], List[float], List[float]]:
     """
     Metoda topsis tworząca ranking produktów
     :param D: (List[List[Number]]) : macierz decyzjna D[m x N]
     :param W: (List[Number]) : wektor wag
     :param W_max: (List[bool]) : wektor logiczny określający, które maksymalizujemy kryterium (domyślnie każde)
+    :param metric: str : nazwa wykorzystywanej metryki
     :return: (Tuple[List[float], int, List[List[float]], List[float], List[float]]) : wektor współczynników skoringowych
     liczba kryetriów, macierz znormalizowana, punkty idealne, punkty antyidealne
     """
@@ -46,18 +47,29 @@ def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] =
     else:
         W_max = [True for _ in range(n)]  # uzupełnienie parametru domyślnego
 
-    for j in range(n):
-        en = euclid_norm(D, j)
-        for i in range(m):
-            N[j][i] = W[j] * D[j][i] / en  # normalizacja macierzy
-            if W_max[j] and p_ideal[j] < N[j][i]:  # znalezienie punktów idealnych
-                p_ideal[j] = N[j][i]
-            if not W_max[j] and p_ideal[j] > N[j][i]:
-                p_ideal[j] = N[j][i]
-            if W_max[j] and p_anti_ideal[j] > N[j][i]:
-                p_anti_ideal[j] = N[j][i]
-            if not W_max[j] and p_anti_ideal[j] < N[j][i]:
-                p_anti_ideal[j] = N[j][i]
+    if metric == "Default":
+
+        for j in range(n):
+            en = euclid_norm(D, j)
+            for i in range(m):
+                N[j][i] = W[j] * D[j][i] / en  # normalizacja macierzy
+                if W_max[j] and p_ideal[j] < N[j][i]:  # znalezienie punktów idealnych
+                    p_ideal[j] = N[j][i]
+                if not W_max[j] and p_ideal[j] > N[j][i]:
+                    p_ideal[j] = N[j][i]
+                if W_max[j] and p_anti_ideal[j] > N[j][i]:
+                    p_anti_ideal[j] = N[j][i]
+                if not W_max[j] and p_anti_ideal[j] < N[j][i]:
+                    p_anti_ideal[j] = N[j][i]
+
+    elif metric == "Bray-Curtis":
+        pass
+    elif metric == "Canberra":
+        pass
+    elif metric == "Chebyshev":
+        pass
+    elif metric == "City Block":
+        pass
 
     for i in range(m):  # obliczenie odległości
         s_star = 0.0  # suma kwadratów róznicy punktu od punktu idealnego
@@ -70,7 +82,6 @@ def topsis(D: List[List[Number]], W: List[Number], W_max: Optional[List[bool]] =
         c[i] = d_minus[i] / (d_minus[i] + d_star[i])
 
     return c, n, N, p_ideal, p_anti_ideal
-
 
 
 def compute_topsis(file_name: str, criteria: List[int], metric: str, weights: List[float]) -> Tuple[str, int, List[List[float]], List[float], List[float], List[str], List[str]]:
@@ -104,7 +115,7 @@ def compute_topsis(file_name: str, criteria: List[int], metric: str, weights: Li
         D.append(df[j].tolist())
         c_names.append(j)
 
-    c, n, N, p_ideal, p_anti_ideal = topsis(D, W, W_max)  # tworzenie rankingu
+    c, n, N, p_ideal, p_anti_ideal = topsis(D, W, metric, W_max)  # tworzenie rankingu
 
     rank = []
     items_names = []

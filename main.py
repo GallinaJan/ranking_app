@@ -271,7 +271,7 @@ class Config(QWidget):
             elif self.parent.method == "TOPSIS":    # jeśli wybrano metodę topsis
 
                 test_window = SetWeightsWindow(self.parent)
-                test_window.show()  # wyświetl okno pytające o wagi
+                test_window.exec()  # wyświetl okno pytające o wagi
 
                 if test_window.isHidden():  # jeślin okno zostanie schowane (automatycznie po zatwierdzeniu wag)
 
@@ -577,7 +577,7 @@ class CriterionChoiceDialog(QDialog):
         self.criterion2 = criterion
 
 
-class SetWeightsWindow(QWidget):
+class SetWeightsWindow(QDialog):
     """
     Okno do wyboru wartości wag dla metody Topsis
     """
