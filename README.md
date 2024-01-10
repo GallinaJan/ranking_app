@@ -1,4 +1,8 @@
 # ranking_app
+
+UWAGA! Link do sharepointa z prezentacją i podziałem zadań:
+https://aghedupl-my.sharepoint.com/personal/konradflis_student_agh_edu_pl/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Fkonradflis%5Fstudent%5Fagh%5Fedu%5Fpl%2FDocuments%2FSWD&view=0
+
 Aplikacja do tworzenia rankingów sprzętów wg parametrów i wag metodami TOPSIS, RSM, SP-CS
 
 2 laby od 3 do 5 osób
