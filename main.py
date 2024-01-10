@@ -407,7 +407,7 @@ class Chart(QWidget):
                 ax.scatter(self.parent.p_anti_ideal[0], self.parent.p_anti_ideal[1], marker="s",
                            label="Punkt antyidealny")
                 ax.set(xlabel=self.parent.criteria[0], ylabel=self.parent.criteria[1],
-                       title="Parametry sprzętów na tle punktów idealnych metody TOPSIS")
+                       title="Parametry mieszkań na tle punktów idealnych metody TOPSIS")
                 ax.legend()
                 self.canvas.draw()
             elif self.parent.method == "TOPSIS" and self.parent.n != 2:
@@ -427,7 +427,7 @@ class Chart(QWidget):
                 ax.scatter(self.parent.p_anti_ideal[idx1], self.parent.p_anti_ideal[idx2], marker="s",
                            label="Punkt antyidealny")
                 ax.set(xlabel=criterion_choice.criterion1, ylabel=criterion_choice.criterion2,
-                       title="Parametry sprzętów na tle punktów idealnych metody TOPSIS")
+                       title="Parametry mieszkań na tle punktów idealnych metody TOPSIS")
                 ax.legend()
                 self.canvas.draw()
             elif self.parent.method == "SP-CS":
