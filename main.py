@@ -606,7 +606,7 @@ class SetWeightsWindow(QDialog):
         button = QPushButton("OK!")     # przycisk zatwierdzający
         button.clicked.connect(self.set_weights)
 
-        self.setFixedSize(300, 75 * len(self.spinboxes))  
+        self.setFixedSize(300, 75 * len(self.spinboxes))
         self.layout.addWidget(button)
         self.setLayout(self.layout)
 
@@ -616,8 +616,10 @@ class SetWeightsWindow(QDialog):
         :return:
         """
         values = [spinbox.value() for spinbox in self.spinboxes]
-
-        if sum(values) != 1:    # jeśli wagi nie sumują się do 1, to należy je wpisać ponownie
+        summed_values = sum(values)
+        if summed_values > 0.99:
+            summed_values = 1
+        if summed_values != 1:    # jeśli wagi nie sumują się do 1, to należy je wpisać ponownie
 
             QMessageBox.warning(self, "Błąd", "Suma wag musi wynosić 1!",
                                 buttons=QMessageBox.StandardButton.Ok)
