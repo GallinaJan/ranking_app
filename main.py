@@ -606,7 +606,7 @@ class SetWeightsWindow(QDialog):
         button = QPushButton("OK!")     # przycisk zatwierdzający
         button.clicked.connect(self.set_weights)
 
-        self.setFixedSize(300, 75 * len(self.spinboxes))  
+        self.setFixedSize(300, 75 * len(self.spinboxes))
         self.layout.addWidget(button)
         self.setLayout(self.layout)
 
